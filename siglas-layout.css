@@ -1,0 +1,73 @@
+/* Ajuste independente: preserva o styles.css e ocupa o bloco sem esticar demais. */
+.schedule-card .siglas-grid {
+  flex: 1 1 auto;
+  min-height: 0;
+  align-content: space-evenly;
+  grid-auto-rows: max-content;
+  touch-action: pan-y;
+}
+
+.schedule-card .sigla-item {
+  align-self: center;
+}
+
+.schedule-card .sigla-token {
+  min-height: clamp(36px, 5.4dvh, 48px);
+  padding-block: clamp(4px, 0.7dvh, 7px);
+}
+
+/* Três ou mais siglas: mantém o botão na coluna e organiza DC sobre as demais. */
+.schedule-card .sigla-token--stacked {
+  box-sizing: border-box;
+  min-width: 0;
+  max-width: 100%;
+  flex-direction: column;
+  gap: 2px;
+  padding-block: 2px;
+  line-height: 1;
+  white-space: normal;
+}
+
+.schedule-card .sigla-token__stacked-top {
+  display: block;
+  flex: 0 0 auto;
+  font-weight: 900;
+}
+
+.schedule-card .sigla-token__stacked-bottom {
+  display: flex;
+  min-width: 0;
+  max-width: 100%;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  white-space: nowrap;
+}
+
+.schedule-card .sigla-token__stacked-bottom .dc-vacation-sigla {
+  margin: 0;
+  padding-inline: 2px;
+}
+
+.schedule-card .sigla-token__stacked-separator {
+  flex: 0 0 auto;
+  font-size: 0.82em;
+  font-weight: 800;
+}
+
+/* Mantém toques rápidos como cliques, sem o zoom de duplo toque do iPhone. */
+.schedule-card #prevButton,
+.schedule-card #todayButton,
+.schedule-card #nextButton {
+  touch-action: manipulation;
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+}
+
+@media (max-height: 700px) {
+  .schedule-card .sigla-token {
+    min-height: clamp(32px, 5dvh, 40px);
+    padding-block: 4px;
+  }
+}
