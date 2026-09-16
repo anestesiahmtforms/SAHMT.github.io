@@ -2242,12 +2242,13 @@ function parseEtiquetaDateTime(value) {
   ).getTime();
 }
 
-function generatePdfReport() {
+async function generatePdfReport() {
   if (!state.summaryRows.length) {
     setStatus("Carregue um resumo com entradas antes de gerar o PDF.", "error");
     return;
   }
 
+  try{await window.SAHMT_SHELL.ensurePdf();}catch(error){setStatus(error.message,"error");return;}
   const jsPdf = window.jspdf?.jsPDF;
   if (!jsPdf) {
     window.print();
@@ -2352,6 +2353,7 @@ async function generateMonthlyPdfForWhatsApp() {
       return;
     }
 
+    await window.SAHMT_SHELL.ensurePdf();
     const { blob, fileName, summaryText } = buildMonthlyPdf(rows, month);
     const file = new File([blob], fileName, { type: "application/pdf" });
 

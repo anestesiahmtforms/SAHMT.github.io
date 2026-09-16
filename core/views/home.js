@@ -900,7 +900,6 @@ const {Services,localStorage,sessionStorage,document,window,navigator,location,h
   }
 
   async function openTraining() {
-    window.SAHMT_AUTH?.track("area_open", "Treinamentos");
     await ensureSharedAccess();
     const target = new URL("./apps/treinamentos/", window.location.href);
     const email = window.SAHMT_AUTH?.getUserLabel?.();
@@ -910,7 +909,6 @@ const {Services,localStorage,sessionStorage,document,window,navigator,location,h
     window.location.assign(target.href);
   }
   function openEventsModal() {
-    window.SAHMT_AUTH?.track("area_open", "Eventos de Escala");
     window.location.href = new URL(eventsUrl, window.location.href).href;
   }
 
@@ -922,7 +920,6 @@ const {Services,localStorage,sessionStorage,document,window,navigator,location,h
 
   function openLabelsModal() {
     if (window.SAHMT_SHELL) { window.location.href = labelsUrl; return; }
-    window.SAHMT_AUTH?.track("area_open", "Etiquetas");
     preloadLabelsModule();
     elements.labelsModal.classList.remove("hidden");
     elements.labelsModal.setAttribute("aria-hidden", "false");
@@ -946,7 +943,6 @@ const {Services,localStorage,sessionStorage,document,window,navigator,location,h
   }
 
   function openManagementModal() {
-    window.SAHMT_AUTH?.track("area_open", "Gestao");
     window.location.href = new URL(managementSiteUrl, window.location.href).href;
   }
 

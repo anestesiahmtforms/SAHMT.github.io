@@ -166,7 +166,6 @@ function configureLink(link, url, itemTitle, audienceLabel) {
 }
 
 function openFolder(item, index) {
-  window.SAHMT_AUTH?.track("area_open", formatLabel(item.title));
   folderTitle.textContent = formatLabel(item.title);
   folderSubtitle.textContent = "Escolha a ação desejada.";
   folderGlyph.textContent = splitIntoBalancedLines(item.title);
@@ -186,7 +185,6 @@ function closeFolderOverlay() {
 }
 
 function openDirectItem(item) {
-  window.SAHMT_AUTH?.track("area_open", formatLabel(item.title));
 
   const targetUrl = new URL(item.directUrl, window.location.href);
   window.SAHMT_AUTH?.addAuthToUrl?.(targetUrl);

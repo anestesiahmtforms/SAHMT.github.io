@@ -16,13 +16,13 @@ function changed(s){const email=s.user?.email||'';if(previousEmail!==email){prev
 function showGate(message){gate.hidden=false;status.textContent=message||'Entre com sua conta Google autorizada.';}
 window.SAHMT_AUTH={
  getSession:publicSession,getUserLabel:()=>publicSession().email||'',
- async requireAccess(){try{await session.confirm();return publicSession();}catch(e){showGate(e.message);throw e;}},
+ async requireAccess(){try{await session.access();return publicSession();}catch(e){showGate(e.message);throw e;}},
  onChange(fn){listeners.add(fn);return()=>listeners.delete(fn);},withPayload:safePayload,
  async chooseAnotherAccount(){const result=await session.logout();googleReady?.accounts?.id?.disableAutoSelect();showGate(result.revoked?'Escolha outra conta.':'Saída local concluída. A revogação no servidor não foi confirmada.');}
 };
 let googleReady=null;
 async function googleLogin(){
- if(!Services.configured){showGate('Ambiente de construção: a implantação única do Apps Script ainda não foi configurada.');return;}
+ if(!Services.configured){showGate('O serviço do SAHMT não está configurado. Entre em contato com o administrador.');return;}
  const script=document.createElement('script');script.src='https://accounts.google.com/gsi/client';script.async=true;
  script.onerror=()=>showGate('Não foi possível carregar o login Google. Atualize a página.');
  script.onload=()=>{googleReady=window.google;googleReady.accounts.id.initialize({client_id:CONFIG.googleClientId,callback:async response=>{try{status.textContent='Validando acesso…';await session.login(response.credential);window.dispatchEvent(new Event('sahmt:auth-retry'));await Services.flush();}catch(e){showGate(e.message);}}});googleReady.accounts.id.renderButton(document.getElementById('google-login'),{theme:'outline',size:'large',text:'signin_with',width:280});};

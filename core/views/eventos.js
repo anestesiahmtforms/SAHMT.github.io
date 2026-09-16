@@ -2101,6 +2101,7 @@ const {Services,localStorage,sessionStorage,document,window,navigator,location,h
   }
 
   async function buildMonthlyRecordsPdfFile(monthKey, records) {
+    await window.SAHMT_SHELL.ensurePdf();
     const jsPdfNamespace = window.jspdf;
     if (!jsPdfNamespace?.jsPDF) {
       throw new Error("Biblioteca de PDF indisponivel.");

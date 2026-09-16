@@ -16,7 +16,7 @@ function serverProgress(p){if(!p)return null;const values=[];for(const [from,to]
   async function load(){
     $('training-retry').hidden=true;status('Carregando treinamentos…');
     try{const data=await api('catalog');if(!Array.isArray(data.trainings))throw new Error('Não foi possível ler o catálogo.');catalog=data.trainings;render(data);status(catalog.length?'':'Nenhum treinamento disponível.');}
-    catch(e){status(e.message);$('training-retry').hidden=false;}
+    catch(e){status(e.message);$('training-retry').hidden=e.code==='FORBIDDEN';if(e.code==='FORBIDDEN'){$('training-catalog').replaceChildren();$('training-score').textContent='Acesso restrito às contas habilitadas para treinamentos.';}}
   }
   function render(data){
     $('training-score').replaceChildren(document.createTextNode(`Sua pontuação: ${data.totalPoints} / ${data.totalAvailablePoints} pontos · `));const percent=document.createElement('strong');percent.textContent=`${data.scorePercentage}%`;$('training-score').append(percent);
