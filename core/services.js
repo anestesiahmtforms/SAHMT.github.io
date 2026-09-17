@@ -21,7 +21,7 @@ export class Services {
  async schedule(){return this.read('escala.list');}
  async highlights(){return (await this.read('escala.highlights')).highlights;}
  async mark(date,sigla,marked){return (await this.write('escala.mark',{date,sigla,marked})).highlights;}
- async labelEntries(data){const r=await this.read('etiquetas.list',data,true);return r.entries.map((r,i)=>{const edits=Array.isArray(r.editHistory)?r.editHistory:[];return {...r,rowNumber:i+2,criadoEm:r.createdAt,criadoPor:r.createdBy,editadoEm:edits.length?r.updatedAt:'',editadoPor:edits.length?r.updatedBy:'',resumoEdicao:edits.map(x=>`${x.at} ${x.by}: ${(x.fields||[]).join(', ')}`).join('\n')};});}
+ async labelEntries(data){const r=await this.read('etiquetas.list',data,true);return r.entries.map((r,i)=>{const edits=Array.isArray(r.editHistory)?r.editHistory:[];return {...r,rowNumber:i+2,criadoEm:r.createdAt,criadoPor:r.createdBy,editadoEm:edits.length?r.updatedAt:'',editadoPor:edits.length?r.updatedBy:'',resumoEdicao:edits.map(formatLabelEditHistoryLine).join('\n')};});}
  async saveLabel(payload,{update=false,queue=true}={}){const {action,rowNumber,userAgent,...data}=safePayload(payload);return this.write(update?'etiquetas.update':'etiquetas.save',data,{queue:!update&&queue});}
  async eventRecords(){const {records}=await this.read('eventos.list',{},true);return records.map((r,i)=>({...r,rowIndex:i+2,timestampRaw:r.createdAt,timestamp:r.createdAt,dataDoEvento:br(r.data),dataDoEventoKey:r.data,tipo:r.tipoEvento,multiplo:String(r.multiploAtraso),valor:Number(r.valor||0).toLocaleString('pt-BR',{minimumFractionDigits:2}),origem:r.source,history:(r.history||[]).map(x=>`${x.at} ${x.by}: ${(x.fields||[]).join(', ')}`).join('\n'),registeredBy:r.createdBy}));}
  eventPayload(p){return {data:iso(p.dataDoEvento||p.data),membro:p.membroAusenteAtrasado,tipoEvento:p.tipoDeEvento,descricao:p.descricaoDoEvento,multiploAtraso:p.multiploDoAtraso,substituto:p.membroSubstituto,turno:p.turno,pagador:p.pagador,credor:p.resultadoCredor,valor:p.valorAPagar,...(p.siglaEvento?{siglaEvento:p.siglaEvento}:{}),...(p.operation==='update'?{id:p.id,version:p.version}:{})};}
@@ -31,4 +31,22 @@ export class Services {
  async training(action,payload={}){const result=action==='catalog'?await this.read('treinamentos.list',{},true):await this.write('treinamentos.'+action,payload);return {ok:true,apiVersion:1,...result};}
  pending(action){return this.outbox.read().filter(item=>item.action===action);}
  async flush(){await this.confirmAccount();const result=await this.outbox.flush();if(result.sent)this.store.invalidate();return result;}
+}
+
+const LABEL_EDIT_FIELD_NAMES=Object.freeze({data:'Data',nomePaciente:'Nome do Paciente',convenio:'Convenio',cirurgia:'Cirurgia',atendimento:'Atendimento',tipo:'Tipo',credor:'Credor',plantonistas:'Plantonista(s)',observacoes:'Observacoes',valor:'Valor',duplicateJustification:'Justificativa'});
+function formatLabelEditHistoryLine(entry){
+ const edit=entry&&typeof entry==='object'?entry:{};
+ const at=String(edit.at||'').trim()||'Sem data registrada';
+ const by=String(edit.by||'').trim()||'Sem responsavel registrado';
+ const fields=Array.isArray(edit.fields)?edit.fields:[];
+ const changes=fields.map((field)=>{
+  if(field&&typeof field==='object'){
+   const name=LABEL_EDIT_FIELD_NAMES[field.name]||field.name||'Campo';
+   const before=field.before==null?'':String(field.before);const after=field.after==null?'':String(field.after);
+   return `${name}: ${before} -> ${after}`;
+  }
+  const name=LABEL_EDIT_FIELD_NAMES[String(field)]||String(field||'').trim();
+  return name;
+ }).filter(Boolean).join('; ');
+ return `${at} - ${by}: ${changes||'Registro editado.'}`;
 }
