@@ -153,6 +153,15 @@ document.querySelector("#auth-other-account")?.addEventListener("click", chooseA
 document.querySelectorAll("[data-return-home]").forEach((button) => {
   button.addEventListener("click", returnToAppHome);
 });
+document.addEventListener("sahmt:show", () => {
+  const today = getTodayISO();
+  resetInitialPanels();
+  fields.data.value = today;
+  summaryDateEl.value = today;
+  reportMonthEl.value = today.slice(0, 7);
+  updateEntryValidationStates();
+  updatePendingSubmissionsStatus();
+});
 window.addEventListener("popstate", handleBrowserBack);
 fields.tipo.addEventListener("change", () => {
   fields.tipo.value = normalizeTipoValue(fields.tipo.value);

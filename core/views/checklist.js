@@ -257,11 +257,24 @@ window.SAHMT_CHECKLIST_CONTRACT=(await import('../checklist-contract.js')).check
   receiveSession(window.SAHMT_AUTH?.getSession());
   window.SAHMT_AUTH?.onChange(receiveSession);
   document.addEventListener('sahmt:hide',stopCamera);
+  document.addEventListener('sahmt:show',()=>{
+    const today = dateKey();
+    lastValidReportDay = today;
+    report = null;
+    syncMaintenanceDay(today);
+    $('reportDate').value = today;
+    if ($('reportMonth')) $('reportMonth').value = today.slice(0, 7);
+    ['reportDialog','monthlyDialog','recordDialog','cameraDialog'].forEach(id=>{
+      const dialog=$(id);
+      if(dialog?.open) dialog.close();
+      dialog?.removeAttribute('open');
+    });
+    stopCamera();
+  });
   if(window.parent!==window)window.parent.postMessage({type:'sahmt-checklist-ready'},cfg.parentOrigin);
   if(!cfg.apiUrl)notice('Cadastro das unidades e conexão com a planilha em configuração.');
   else if(!session)notice('Abra este checklist pelo app principal SAHMT-BH.');
   ;
 })();
-
 
 }

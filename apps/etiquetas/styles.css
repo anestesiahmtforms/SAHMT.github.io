@@ -5748,6 +5748,20 @@ body::before {
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.64);
 }
 
+/* O relatório mantém a entrada de registros como única área expansível.
+   O retorno fica fora dela, fixo no rodapé do modal. */
+.summary-panel .summary-list {
+  grid-row: 4;
+}
+
+.summary-panel .summary-report-footer {
+  grid-row: 5;
+  flex: 0 0 auto;
+  position: relative;
+  z-index: 1;
+  background: transparent;
+}
+
 .summary-panel .record-card,
 .monthly-panel .record-card {
   border-radius: 15px;

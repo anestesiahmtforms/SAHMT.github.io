@@ -181,6 +181,20 @@ const {Services,localStorage,sessionStorage,document,window,navigator,location,h
       flushPendingEventSubmissions({ notify: true });
     }
   });
+  document.addEventListener("sahmt:show", () => {
+    const currentTodayKey = formatKey(new Date());
+    syncDailyDateInputs(currentTodayKey);
+    if (elements.monthlyRecordsInput) {
+      elements.monthlyRecordsInput.value = currentTodayKey.slice(0, 7);
+    }
+    closeEventEntryModal();
+    closeSiglaChoiceModal(null);
+    closeDailyRecordsPanel();
+    closeMonthlyRecordsModal();
+    render(currentTodayKey);
+    hydrateEventRecords().catch(() => {});
+    hydrateSharedSiglaState().then(() => render(elements.dateInput.value)).catch(() => {});
+  });
 
   elements.dateInput.addEventListener("input", () => {
     setActiveDailyDate(elements.dateInput.value);

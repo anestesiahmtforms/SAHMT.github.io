@@ -253,7 +253,14 @@ const {Services,localStorage,sessionStorage,document,window,navigator,location,h
   render(elements.dateInput.value);
   refreshScheduleFromSheet(scheduleWarmupPromise);
   hydrateSharedSiglaState().then(()=>render(elements.dateInput.value)).catch(()=>{});
-  document.addEventListener('sahmt:show',()=>{refreshScheduleFromSheet();hydrateSharedSiglaState().then(()=>render(elements.dateInput.value)).catch(()=>{});});
+  document.addEventListener('sahmt:show',()=>{
+    // Cada retorno ao módulo começa no dia corrente, sem reaproveitar a data
+    // que ficou selecionada antes de navegar para outra página.
+    elements.dateInput.value = clampKey(formatKey(new Date()));
+    render(elements.dateInput.value);
+    refreshScheduleFromSheet();
+    hydrateSharedSiglaState().then(()=>render(elements.dateInput.value)).catch(()=>{});
+  });
 
   async function ensureSharedAccess() {
     if (!window.SAHMT_AUTH?.requireAccess) {
