@@ -217,3 +217,65 @@ dialog{width:min(94%,560px);max-height:90dvh;overflow:auto;border:1px solid #fff
 .return-strip img { width: min(100%, 56px); height: 52px; }
 .return-strip span { padding: 2px 4px; border: 1px solid rgba(23,98,161,.2); border-radius: 999px; background: rgba(255,255,255,.68); color: #12324f; font-size: .5rem; line-height: 1; }
 @media (max-width: 380px) { .return-strip { gap: 4px; padding: 5px; } .return-strip a { min-height: 72px; border-radius: 13px; } .return-strip img { height: 45px; } }
+
+/* Relatório diário em primeiro plano: maior área de toque e volume 3D. */
+.report-actions {
+  margin-top: 8px;
+  margin-bottom: 2px;
+}
+
+.report-button {
+  min-height: 78px;
+  padding: 16px 14px 18px;
+  border: 2px solid rgba(255, 248, 220, .98);
+  border-radius: 19px;
+  background:
+    linear-gradient(135deg, rgba(255,255,255,.3), transparent 42%),
+    linear-gradient(145deg, #f0b94e 0%, #d1801e 55%, #a94d0b 100%);
+  color: #fffdf4;
+  font-size: clamp(.78rem, 3.6vw, 1rem);
+  font-weight: 950;
+  letter-spacing: .075em;
+  text-shadow: 0 2px 2px rgba(87, 43, 0, .38);
+  box-shadow:
+    0 8px 0 #713006,
+    0 16px 26px rgba(142, 65, 7, .28),
+    inset 0 2px 0 rgba(255,255,255,.5),
+    inset 0 -8px 14px rgba(117, 43, 0, .16);
+  transition: transform 150ms ease, filter 150ms ease, box-shadow 150ms ease;
+}
+
+.report-button:hover:not(:disabled),
+.report-button:focus-visible:not(:disabled) {
+  filter: saturate(1.1) brightness(1.05);
+  transform: translateY(-3px);
+  box-shadow:
+    0 11px 0 #713006,
+    0 21px 31px rgba(142, 65, 7, .32),
+    inset 0 2px 0 rgba(255,255,255,.6),
+    inset 0 -8px 14px rgba(117, 43, 0, .12);
+}
+
+.report-button:active:not(:disabled) {
+  transform: translateY(6px) scale(.985);
+  box-shadow:
+    0 2px 0 #713006,
+    0 7px 12px rgba(142, 65, 7, .2),
+    inset 0 3px 6px rgba(117, 43, 0, .2);
+}
+
+/* A faixa permanece separada e desce para o espaço livre antes do rodapé. */
+.return-strip {
+  margin-top: 16px;
+  align-self: end;
+}
+
+@media (max-width: 430px) {
+  .report-button { min-height: 72px; padding-block: 14px 16px; }
+  .return-strip { margin-top: 14px; }
+}
+
+@media (max-width: 380px) {
+  .report-button { min-height: 66px; font-size: .68rem; }
+  .return-strip { margin-top: 11px; }
+}
