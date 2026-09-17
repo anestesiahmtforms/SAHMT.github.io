@@ -12,11 +12,11 @@ const outbox=new Outbox({api,session:()=>session.snapshot()});
 export const Services=new ServicesClass({api,session,store,outbox});
 const gate=document.getElementById('login-gate'),status=document.getElementById('login-status');
 const publicSession=()=>{const s=session.snapshot();return {...s.user,authenticated:s.status==='authenticated',expiresAt:s.expiresAt};};
-function changed(s){const email=s.user?.email||'';if(previousEmail!==email){previousEmail=email;Services.clear();window.dispatchEvent(new Event('sahmt:account-change'));}for(const fn of listeners)fn(publicSession());gate.hidden=s.status==='authenticated';document.getElementById('account-button').hidden=true;}
+function changed(s){const email=s.user?.email||'';if(previousEmail!==email){previousEmail=email;Services.clear();window.dispatchEvent(new Event('sahmt:account-change'));}for(const fn of listeners)fn(publicSession());const usable=Boolean(s.user?.email&&s.token&&s.expiresAt>Date.now()&&s.status!=='anonymous');gate.hidden=usable||s.status==='authenticated';document.getElementById('account-button').hidden=true;}
 function showGate(message){gate.hidden=false;status.textContent=message||'Entre com sua conta Google autorizada.';}
 window.SAHMT_AUTH={
  getSession:publicSession,getUserLabel:()=>publicSession().email||'',
- async requireAccess(){try{await session.access();return publicSession();}catch(e){showGate(e.message);throw e;}},
+ async requireAccess(){try{await session.access();return publicSession();}catch(e){const state=session.snapshot();if(['UNAUTHORIZED','FORBIDDEN'].includes(e.code)||!state.token||!state.user)showGate(e.message);throw e;}},
  onChange(fn){listeners.add(fn);return()=>listeners.delete(fn);},withPayload:safePayload,
  async chooseAnotherAccount(){const result=await session.logout();googleReady?.accounts?.id?.disableAutoSelect();showGate(result.revoked?'Escolha outra conta.':'Saída local concluída. A revogação no servidor não foi confirmada.');}
 };
