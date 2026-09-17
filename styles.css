@@ -1979,3 +1979,118 @@ button:hover,
 .module-link-card:focus-visible { filter: brightness(1.02); transform: translateY(-2px); box-shadow: 0 6px 14px rgba(26, 73, 98, .14); }
 .module-link-card:active { transform: translateY(1px) scale(.97); }
 
+/* Acessos rápidos da Home: mesma linguagem 3D dos botões de Treinamentos. */
+.ecosystem-action-strip {
+  gap: 9px;
+  margin: 7px 0;
+}
+
+.ecosystem-action {
+  position: relative;
+  min-height: 78px;
+  padding: 11px 6px 13px;
+  border: 2px solid rgba(249, 247, 238, 0.96);
+  border-radius: 19px;
+  color: #fff;
+  font-size: clamp(0.68rem, 2.8vw, 0.82rem);
+  font-weight: 900;
+  letter-spacing: 0.035em;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.26);
+  box-shadow:
+    0 7px 0 rgba(8, 43, 74, 0.9),
+    0 13px 20px rgba(13, 50, 87, 0.2),
+    inset 0 1px 0 rgba(255, 255, 255, 0.42);
+  transition: transform 150ms ease, filter 150ms ease, box-shadow 150ms ease;
+}
+
+.ecosystem-action::after {
+  display: none;
+}
+
+.ecosystem-action:hover:not(:disabled),
+.ecosystem-action:focus-visible:not(:disabled) {
+  filter: saturate(1.08) brightness(1.04);
+  transform: translateY(-2px);
+  box-shadow:
+    0 9px 0 rgba(8, 43, 74, 0.9),
+    0 17px 25px rgba(13, 50, 87, 0.24),
+    inset 0 1px 0 rgba(255, 255, 255, 0.52);
+}
+
+.ecosystem-action:active:not(:disabled) {
+  transform: translateY(5px) scale(0.98);
+  box-shadow:
+    0 2px 0 rgba(8, 43, 74, 0.9),
+    0 6px 12px rgba(13, 50, 87, 0.16),
+    inset 0 2px 4px rgba(0, 0, 0, 0.12);
+}
+
+.ecosystem-action--checklist {
+  background: linear-gradient(135deg, #1762a1 0%, #0d3257 100%);
+}
+
+.ecosystem-action--training {
+  background: linear-gradient(135deg, #e58a24 0%, #a94c0c 100%);
+  box-shadow:
+    0 7px 0 #713006,
+    0 13px 20px rgba(142, 65, 7, 0.22),
+    inset 0 1px 0 rgba(255, 255, 255, 0.46);
+}
+
+.ecosystem-action--notifications {
+  background: linear-gradient(135deg, #7b8b95 0%, #4d5c66 100%);
+  box-shadow:
+    0 7px 0 #34434d,
+    0 13px 20px rgba(52, 67, 77, 0.2),
+    inset 0 1px 0 rgba(255, 255, 255, 0.38);
+}
+
+.ecosystem-action__icon {
+  margin-bottom: 6px;
+  font-size: 1.42rem;
+  line-height: 1;
+  text-shadow: 0 2px 3px rgba(0, 0, 0, 0.28);
+}
+
+/* Faixa de logos compacta, no mesmo padrão simples dos Treinamentos. */
+.module-link-strip {
+  min-height: 88px;
+  gap: 6px;
+  margin: 5px 0;
+  padding: 5px;
+  border-radius: 18px;
+}
+
+.module-link-card {
+  min-height: 76px;
+  padding: 4px 2px 5px;
+  border-radius: 14px;
+  box-shadow: 0 4px 8px rgba(26, 73, 98, 0.1);
+}
+
+.module-link-card__image {
+  width: min(100%, 58px);
+  height: 52px;
+}
+
+.module-link-card span {
+  padding: 2px 4px;
+  font-size: 0.52rem;
+}
+
+@media (max-width: 380px) {
+  .ecosystem-action {
+    min-height: 72px;
+    padding-inline: 3px;
+    font-size: 0.62rem;
+  }
+
+  .ecosystem-action__icon {
+    font-size: 1.25rem;
+  }
+
+  .module-link-card__image {
+    height: 46px;
+  }
+}
+
