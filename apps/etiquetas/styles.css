@@ -6247,3 +6247,106 @@ body::before {
     font-size: 0.75rem;
   }
 }
+
+/* Revisao visual: botoes-balão, altos e protusos, inspirados nos controles do iPhone. */
+.scanner-panel .capture-shutter,
+.scanner-panel #process-image,
+.scanner-panel .scanner-action,
+.quick-actions .home-action-button {
+  border-radius: 999px !important;
+  border: 2px solid rgba(255, 255, 255, 0.92) !important;
+  font-size: clamp(0.84rem, 3.4vw, 1rem) !important;
+  letter-spacing: 0.055em !important;
+  transform: translateY(-1px) !important;
+  filter: saturate(1.08) !important;
+}
+
+.scanner-panel .capture-shutter {
+  min-height: 76px !important;
+  padding: 18px 24px !important;
+  box-shadow:
+    inset 0 3px 3px rgba(255, 255, 255, 0.92),
+    inset 0 -8px 14px rgba(3, 71, 65, 0.22),
+    0 3px 0 rgba(5, 91, 82, 0.42),
+    0 8px 0 rgba(5, 91, 82, 0.16),
+    0 22px 34px rgba(5, 91, 82, 0.3) !important;
+}
+
+.scanner-panel #process-image {
+  min-height: 68px !important;
+  margin-top: 16px !important;
+  padding: 16px 24px !important;
+  box-shadow:
+    inset 0 3px 3px rgba(255, 255, 255, 0.96),
+    inset 0 -8px 14px rgba(113, 72, 6, 0.2),
+    0 3px 0 rgba(141, 92, 18, 0.42),
+    0 8px 0 rgba(141, 92, 18, 0.16),
+    0 22px 32px rgba(141, 92, 18, 0.28) !important;
+}
+
+.scanner-panel .scanner-secondary-actions {
+  margin-top: 16px !important;
+}
+
+.scanner-panel .scanner-action {
+  min-height: 64px !important;
+  padding: 15px 22px !important;
+  box-shadow:
+    inset 0 3px 3px rgba(255, 255, 255, 0.94),
+    inset 0 -8px 14px rgba(23, 55, 77, 0.18),
+    0 3px 0 rgba(67, 101, 126, 0.42),
+    0 8px 0 rgba(67, 101, 126, 0.15),
+    0 20px 30px rgba(23, 55, 77, 0.25) !important;
+}
+
+.quick-actions {
+  gap: 18px !important;
+  margin-top: 18px !important;
+}
+
+.quick-actions .quick-action-card {
+  min-width: 0;
+}
+
+.quick-actions .home-action-button {
+  min-height: 76px !important;
+  padding: 18px 22px !important;
+  box-shadow:
+    inset 0 3px 3px rgba(255, 255, 255, 0.96),
+    inset 0 -8px 14px rgba(4, 62, 58, 0.22),
+    0 3px 0 rgba(8, 91, 83, 0.44),
+    0 8px 0 rgba(8, 91, 83, 0.16),
+    0 22px 34px rgba(8, 91, 83, 0.28) !important;
+}
+
+.scanner-panel .capture-shutter::after,
+.scanner-panel #process-image::after,
+.scanner-panel .scanner-action::after,
+.quick-actions .home-action-button::after {
+  content: "";
+  position: absolute;
+  inset: 4px 13% auto;
+  height: 28%;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.24);
+  filter: blur(0.5px);
+  pointer-events: none;
+}
+
+.scanner-panel .capture-shutter > *,
+.scanner-panel #process-image > *,
+.scanner-panel .scanner-action > *,
+.quick-actions .home-action-button > * {
+  position: relative;
+  z-index: 1;
+}
+
+@media (max-width: 380px) {
+  .scanner-panel .capture-shutter,
+  .scanner-panel #process-image,
+  .scanner-panel .scanner-action,
+  .quick-actions .home-action-button {
+    min-height: 64px !important;
+    padding-inline: 16px !important;
+  }
+}
