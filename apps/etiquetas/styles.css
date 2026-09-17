@@ -6350,3 +6350,116 @@ body::before {
     padding-inline: 16px !important;
   }
 }
+
+/* Acabamento final: uma cor uniforme por botao, sem degradê, e tela inicial sem corte. */
+.layout:not(:has(.modal-panel.is-open)) {
+  gap: 5px !important;
+  overflow: hidden !important;
+}
+
+.layout:not(:has(.modal-panel.is-open)) > .scanner-panel {
+  flex: 0 1 auto !important;
+  min-height: 0 !important;
+  gap: 6px !important;
+  overflow: visible !important;
+}
+
+.layout:not(:has(.modal-panel.is-open)) > .scanner-panel .camera-stage,
+.layout:not(:has(.modal-panel.is-open)) > .scanner-panel video,
+.layout:not(:has(.modal-panel.is-open)) > .scanner-panel .camera-stage.has-capture {
+  flex: 0 0 132px !important;
+  height: 132px !important;
+  min-height: 132px !important;
+  max-height: 132px !important;
+}
+
+.scanner-panel .capture-shutter,
+.scanner-panel #process-image,
+.scanner-panel .scanner-action,
+.quick-actions .home-action-button {
+  background-image: none !important;
+  border-radius: 999px !important;
+}
+
+.scanner-panel .capture-shutter {
+  min-height: 58px !important;
+  padding-block: 11px !important;
+  background-color: #148779 !important;
+}
+
+.scanner-panel #process-image {
+  min-height: 54px !important;
+  margin-top: 7px !important;
+  padding-block: 10px !important;
+  background-color: #c48718 !important;
+  color: #fff9e8 !important;
+}
+
+.scanner-panel .scanner-secondary-actions {
+  margin-top: 7px !important;
+}
+
+.scanner-panel .scanner-action {
+  min-height: 54px !important;
+  padding-block: 10px !important;
+  background-color: #527d99 !important;
+  color: #f7fcff !important;
+}
+
+.quick-actions {
+  gap: 8px !important;
+  margin-top: 6px !important;
+}
+
+.quick-actions .home-action-button {
+  min-height: 60px !important;
+  padding-block: 12px !important;
+  background-color: #117b70 !important;
+  color: #f8fffd !important;
+}
+
+.quick-actions .home-action-button.monthly-action {
+  background-color: #aa731e !important;
+  color: #fff9e7 !important;
+}
+
+.layout:not(:has(.modal-panel.is-open)) > .quick-actions .home-action-button {
+  min-height: 58px !important;
+}
+
+.scanner-panel .capture-shutter::before,
+.scanner-panel #process-image::before,
+.scanner-panel .scanner-action::before,
+.quick-actions .home-action-button::before {
+  background: rgba(255, 255, 255, 0.18) !important;
+  inset: 3px 12% auto !important;
+  height: 24% !important;
+}
+
+.scanner-panel .capture-shutter::after,
+.scanner-panel #process-image::after,
+.scanner-panel .scanner-action::after,
+.quick-actions .home-action-button::after {
+  background: rgba(255, 255, 255, 0.12) !important;
+}
+
+@media (max-width: 680px) and (max-height: 760px) {
+  .layout:not(:has(.modal-panel.is-open)) > .scanner-panel .camera-stage,
+  .layout:not(:has(.modal-panel.is-open)) > .scanner-panel video,
+  .layout:not(:has(.modal-panel.is-open)) > .scanner-panel .camera-stage.has-capture {
+    flex-basis: 112px !important;
+    height: 112px !important;
+    min-height: 112px !important;
+    max-height: 112px !important;
+  }
+
+  .scanner-panel .capture-shutter,
+  .scanner-panel #process-image,
+  .scanner-panel .scanner-action {
+    min-height: 49px !important;
+  }
+
+  .layout:not(:has(.modal-panel.is-open)) > .quick-actions .home-action-button {
+    min-height: 50px !important;
+  }
+}
