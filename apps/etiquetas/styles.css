@@ -6085,3 +6085,13 @@ body::before {
 .scanner-panel .camera-stage:not(.has-capture) .preview-wrap {
   display: none !important;
 }
+/* Faixa sem painel de fundo: somente os botoes individuais permanecem visiveis. */
+.module-link-strip,
+.return-strip {
+  background: transparent !important;
+  border: 0 !important;
+  box-shadow: none !important;
+  padding: 0;
+  margin-top: 8px;
+  margin-bottom: 8px;
+}

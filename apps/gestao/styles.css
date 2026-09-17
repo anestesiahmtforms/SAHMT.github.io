@@ -1179,3 +1179,13 @@ body {
 .module-link-strip img { width: min(100%, 56px); height: 52px; }
 .module-link-strip span { padding: 2px 4px; border: 1px solid rgba(23,98,161,.2); border-radius: 999px; background: rgba(255,255,255,.68); color: #12324f; font-size: .5rem; line-height: 1; }
 @media (max-width: 380px) { .module-link-strip { gap: 4px; padding: 5px; } .module-link-strip a { min-height: 72px; border-radius: 13px; } .module-link-strip img { height: 45px; } }
+/* Faixa sem painel de fundo: somente os botoes individuais permanecem visiveis. */
+.module-link-strip,
+.return-strip {
+  background: transparent !important;
+  border: 0 !important;
+  box-shadow: none !important;
+  padding: 0;
+  margin-top: 8px;
+  margin-bottom: 8px;
+}

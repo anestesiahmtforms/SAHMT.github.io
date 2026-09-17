@@ -279,3 +279,13 @@ dialog{width:min(94%,560px);max-height:90dvh;overflow:auto;border:1px solid #fff
   .report-button { min-height: 66px; font-size: .68rem; }
   .return-strip { margin-top: 11px; }
 }
+/* Faixa sem painel de fundo: somente os botoes individuais permanecem visiveis. */
+.module-link-strip,
+.return-strip {
+  background: transparent !important;
+  border: 0 !important;
+  box-shadow: none !important;
+  padding: 0;
+  margin-top: 8px;
+  margin-bottom: 8px;
+}
