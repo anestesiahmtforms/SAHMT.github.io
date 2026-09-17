@@ -175,3 +175,77 @@ dialog.report-dialog {
     max-height: calc(100svh - 2vh);
   }
 }
+
+/* Ordem visual da assinatura: ação principal primeiro, alternativa discreta depois. */
+.report-dialog #responsible {
+  order: 2;
+  min-height: 42px;
+  padding: 5px 8px;
+  margin: 2px 0 3px;
+  gap: 1px;
+  line-height: 1.15;
+}
+
+.report-dialog #responsible strong { font-size: .64rem; }
+.report-dialog #responsible p { font-size: .6rem; }
+
+.report-dialog #equipmentList { order: 1; }
+.report-dialog #signatureStatus { display: contents; }
+.report-dialog #signatureStatus .signature-status-wrap { display: contents; }
+.report-dialog #signatureStatus .signature-status-wrap > p { order: 3; }
+.report-dialog #signForm { order: 4; }
+.report-dialog #incompleteSignatureBanner { order: 6; }
+.report-dialog > button[data-close="reportDialog"] { order: 7; }
+
+.report-dialog #sign {
+  min-height: 58px;
+  margin-top: 3px;
+  padding: 12px 14px;
+  border: 2px solid rgba(219,241,255,.92);
+  border-radius: 16px;
+  background: linear-gradient(135deg, #1762a1 0%, #0d3257 100%);
+  color: #fff;
+  font-size: .82rem;
+  font-weight: 950;
+  letter-spacing: .035em;
+  text-shadow: 0 1px 2px rgba(0,0,0,.3);
+  box-shadow: 0 7px 0 #082b4a, 0 13px 22px rgba(13,50,87,.28), inset 0 1px 0 rgba(255,255,255,.42);
+}
+
+.report-dialog #sign:hover:not(:disabled),
+.report-dialog #sign:focus-visible:not(:disabled) {
+  transform: translateY(-2px);
+  filter: brightness(1.08) saturate(1.08);
+  box-shadow: 0 9px 0 #082b4a, 0 17px 27px rgba(13,50,87,.32), inset 0 1px 0 rgba(255,255,255,.52);
+}
+
+.report-dialog #sign:active:not(:disabled) {
+  transform: translateY(5px) scale(.985);
+  box-shadow: 0 2px 0 #082b4a, 0 6px 11px rgba(13,50,87,.2), inset 0 2px 5px rgba(0,0,0,.16);
+}
+
+.report-dialog #signatureStatus .sign-incomplete-button {
+  order: 5;
+  justify-self: center;
+  min-height: 30px;
+  margin: 4px auto 2px;
+  padding: 5px 9px;
+  border: 1px solid rgba(98,114,124,.35);
+  border-radius: 9px;
+  background: #e5ebee;
+  color: #52636d;
+  font-size: .58rem;
+  font-weight: 750;
+  box-shadow: 0 2px 5px rgba(20,50,84,.1);
+  text-shadow: none;
+}
+
+.report-dialog #signatureStatus .sign-incomplete-button.is-signed {
+  background: #f5e7b5;
+  color: #806000;
+  box-shadow: 0 2px 5px rgba(190,137,0,.14);
+}
+
+.report-dialog .incomplete-signature-banner {
+  margin-top: 4px;
+}
