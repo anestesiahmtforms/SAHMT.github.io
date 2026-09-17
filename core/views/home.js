@@ -1261,7 +1261,10 @@ const {Services,localStorage,sessionStorage,document,window,navigator,location,h
 
     const meta = document.createElement("p");
     meta.className = "contact-card__meta";
-    meta.textContent = [contact.role, contact.scaleFormatted].filter(Boolean).join(" â€¢ ") || "Equipe SAHMT";
+    meta.textContent = [contact.role, contact.scaleFormatted]
+      .map(cleanContactText)
+      .filter(Boolean)
+      .join(" • ") || "Equipe SAHMT";
 
     titleWrap.append(siglaBadge, nameLine, meta);
     header.appendChild(titleWrap);
@@ -1317,6 +1320,14 @@ const {Services,localStorage,sessionStorage,document,window,navigator,location,h
     link.rel = href.startsWith("http") ? "noopener noreferrer" : "";
     link.textContent = label;
     return link;
+  }
+
+  function cleanContactText(value) {
+    return String(value ?? "")
+      .replace(/&(?:#x20|#32);/gi, " ")
+      .replace(/[\u0000-\u001f\u007f]/g, "")
+      .replace(/\s+/g, " ")
+      .trim();
   }
 
   function resolveTokenDetails(token, weekdayLabel) {
