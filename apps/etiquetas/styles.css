@@ -81,6 +81,18 @@
   transform: translateY(1px) scale(.97);
 }
 
+/* Navegação premium: cartões separados, flutuantes e consistentes com Checklist. */
+.module-link-strip { gap: 7px; padding: 7px; border-radius: 20px; background: linear-gradient(145deg, rgba(255,255,255,.9), rgba(218,232,239,.72)); box-shadow: 0 14px 26px rgba(8,18,31,.14), inset 0 1px 0 rgba(255,255,255,.96); }
+.module-link-strip a { position: relative; isolation: isolate; min-height: 84px; padding: 5px 3px 7px; overflow: hidden; border: 2px solid rgba(255,255,255,.96); border-radius: 16px; background: linear-gradient(145deg, #fff, #e4eef3 56%, #b8d0dc); box-shadow: 0 6px 0 #7898a8, 0 12px 18px rgba(26,73,98,.16), inset 0 1px 0 #fff; transition: transform 150ms ease, filter 150ms ease, box-shadow 150ms ease; }
+.module-link-strip a::before { content: ""; position: absolute; z-index: -1; inset: -35% -25% auto; height: 65%; border-radius: 50%; background: linear-gradient(105deg, transparent 18%, rgba(255,255,255,.86) 50%, transparent 82%); transform: rotate(-8deg); pointer-events: none; }
+.module-link-strip a:nth-child(2) { background: linear-gradient(145deg, #f5fffd, #cbe9e2 58%, #91c6bb); box-shadow: 0 6px 0 #4c8f88, 0 12px 18px rgba(30,96,89,.16), inset 0 1px 0 #fff; }
+.module-link-strip a:nth-child(3) { background: linear-gradient(145deg, #fffdf5, #f3e5c5 58%, #d8b879); box-shadow: 0 6px 0 #9a6b28, 0 12px 18px rgba(154,107,40,.16), inset 0 1px 0 #fff; }
+.module-link-strip a:hover, .module-link-strip a:focus-visible { filter: saturate(1.08) brightness(1.03); transform: translateY(-2px); box-shadow: 0 8px 0 #7898a8, 0 17px 24px rgba(26,73,98,.2), inset 0 1px 0 #fff; }
+.module-link-strip a:active { transform: translateY(4px) scale(.98); box-shadow: 0 2px 0 #7898a8, 0 6px 10px rgba(26,73,98,.14), inset 0 2px 4px rgba(13,50,87,.12); }
+.module-link-strip img { width: min(100%, 56px); height: 52px; }
+.module-link-strip span { padding: 2px 4px; border: 1px solid rgba(23,98,161,.2); border-radius: 999px; background: rgba(255,255,255,.68); color: #12324f; font-size: .5rem; line-height: 1; }
+@media (max-width: 380px) { .module-link-strip { gap: 4px; padding: 5px; } .module-link-strip a { min-height: 72px; border-radius: 13px; } .module-link-strip img { height: 45px; } }
+
 /* Reports use the same premium record cards as EVENTOS. */
 .record-card {
   display: grid;
