@@ -54,6 +54,8 @@ const {Services,localStorage,sessionStorage,document,window,navigator,location,h
   let activeContactWeekday = "";
   let sharedStateHash = serializeSiglaState(siglaCheckState);
   let sharedStateTimer = null;
+  let releaseSequence = Promise.resolve();
+  const pendingReleaseKeys = new Set();
   const pendingSharedUpdates = new Map();
 
   const elements = {
@@ -383,11 +385,14 @@ const {Services,localStorage,sessionStorage,document,window,navigator,location,h
           );
         }
       }
+      const releaseParts = extractSiglas(sigla, weekdayLabel);
+      const releaseComplete = releaseParts.length > 0
+        && releaseParts.every((part) => isSiglaChecked(activeDate, part));
       if (isWholeSiglaOnVacation(sigla, vacationSiglas)) {
         token.classList.add("sigla-token--vacation");
       }
 
-      if (isSiglaChecked(activeDate, sigla)) {
+      if (isSiglaChecked(activeDate, sigla) || releaseComplete) {
         token.classList.add("sigla-token--checked");
         token.setAttribute("aria-pressed", "true");
       }
@@ -437,37 +442,51 @@ const {Services,localStorage,sessionStorage,document,window,navigator,location,h
       return;
     }
 
+    const releaseKey = buildPendingKey(activeDate, contact.sigla);
+    if (pendingReleaseKeys.has(releaseKey)) {
+      return;
+    }
     const marked = !isSiglaChecked(activeDate, contact.sigla);
     const tokenWasMarked = isSiglaChecked(activeDate, token);
     const tokenMarked = groupContacts.every((groupContact) =>
       groupContact.sigla === contact.sigla ? marked : isSiglaChecked(activeDate, groupContact.sigla)
     );
 
+    pendingReleaseKeys.add(releaseKey);
     button.disabled = true;
     updateSiglaCheckState(activeDate, contact.sigla, marked);
     updateSiglaCheckState(activeDate, token, tokenMarked);
+    registerPendingSharedUpdate(activeDate, contact.sigla, marked);
+    if (tokenMarked !== tokenWasMarked) {
+      registerPendingSharedUpdate(activeDate, token, tokenMarked);
+    }
     persistSiglaCheckState();
     render(activeDate);
 
     if (!sharedStateEndpoint) {
+      pendingReleaseKeys.delete(releaseKey);
       button.disabled = false;
       return;
     }
 
-    try {
-      const contactState = await pushSharedSiglaCheck(activeDate, contact.sigla, marked);
-      if (tokenMarked !== tokenWasMarked) {
-        await pushSharedSiglaCheck(activeDate, token, tokenMarked);
+    const sync = async () => {
+      try {
+        const contactState = await pushSharedSiglaCheck(activeDate, contact.sigla, marked);
+        if (tokenMarked !== tokenWasMarked) {
+          await pushSharedSiglaCheck(activeDate, token, tokenMarked);
+        }
+        if (contactState) {
+          replaceSiglaCheckState(contactState);
+        }
+      } catch (error) {
+        // Keep the optimistic local state; the next polling cycle can reconcile it.
+      } finally {
+        pendingReleaseKeys.delete(releaseKey);
+        render(activeDate);
       }
-      if (contactState) {
-        replaceSiglaCheckState(contactState);
-      }
-    } catch (error) {
-      // Keep the local toggle when the shared endpoint is temporarily unavailable.
-    } finally {
-      button.disabled = false;
-      button.classList.toggle("contact-card__release--released", marked);
-    }
+    };
+    // Impede respostas lentas de uma marcação de sobrescrever a seguinte.
+    releaseSequence = releaseSequence.then(sync, sync);
   }  function isSiglaChecked(dateKey, sigla) {
     return Array.isArray(siglaCheckState[dateKey]) && siglaCheckState[dateKey].includes(sigla);
   }
@@ -1229,6 +1248,7 @@ const {Services,localStorage,sessionStorage,document,window,navigator,location,h
       if (alreadyReleased) {
         releaseButton.classList.add("contact-card__release--released");
       }
+      releaseButton.disabled = pendingReleaseKeys.has(buildPendingKey(activeDate, contact.sigla));
       releaseButton.addEventListener("click", () => releaseContactForDate(
         releaseButton,
         contact,
