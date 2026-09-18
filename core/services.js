@@ -23,7 +23,7 @@ export class Services {
  async mark(date,sigla,marked){return (await this.write('escala.mark',{date,sigla,marked})).highlights;}
  async labelEntries(data){const r=await this.read('etiquetas.list',data,true);return r.entries.map((r,i)=>{const edits=Array.isArray(r.editHistory)?r.editHistory:[];return {...r,rowNumber:i+2,criadoEm:r.createdAt,criadoPor:r.createdBy,editadoEm:edits.length?r.updatedAt:'',editadoPor:edits.length?r.updatedBy:'',resumoEdicao:edits.map(formatLabelEditHistoryLine).join('\n')};});}
  async saveLabel(payload,{update=false,queue=true}={}){const {action,rowNumber,userAgent,...data}=safePayload(payload);return this.write(update?'etiquetas.update':'etiquetas.save',data,{queue:!update&&queue});}
- async eventRecords(){const {records}=await this.read('eventos.list',{},true);return records.map((r,i)=>({...r,rowIndex:i+2,timestampRaw:r.createdAt,timestamp:r.createdAt,dataDoEvento:br(r.data),dataDoEventoKey:r.data,tipo:r.tipoEvento,multiplo:String(r.multiploAtraso),valor:Number(r.valor||0).toLocaleString('pt-BR',{minimumFractionDigits:2}),origem:r.source,history:(r.history||[]).map(x=>`${x.at} ${x.by}: ${(x.fields||[]).join(', ')}`).join('\n'),registeredBy:r.createdBy}));}
+ async eventRecords(){const {records}=await this.read('eventos.list',{},true);return records.map((r,i)=>{const edits=Array.isArray(r.history)?r.history.filter(x=>x&&x.kind!=='launch'&&Array.isArray(x.fields)&&x.fields.length):[];return {...r,rowIndex:i+2,timestampRaw:r.createdAt,timestamp:r.createdAt,dataDoEvento:br(r.data),dataDoEventoKey:r.data,tipo:r.tipoEvento,multiplo:String(r.multiploAtraso),valor:Number(r.valor||0).toLocaleString('pt-BR',{minimumFractionDigits:2}),origem:r.source,history:edits.map(formatEventEditHistoryLine).join('\n\n'),registeredBy:r.createdBy};});}
  eventPayload(p){return {data:iso(p.dataDoEvento||p.data),membro:p.membroAusenteAtrasado,tipoEvento:p.tipoDeEvento,descricao:p.descricaoDoEvento,multiploAtraso:p.multiploDoAtraso,substituto:p.membroSubstituto,turno:p.turno,pagador:p.pagador,credor:p.resultadoCredor,valor:p.valorAPagar,...(p.siglaEvento?{siglaEvento:p.siglaEvento}:{}),...(p.operation==='update'?{id:p.id,version:p.version}:{})};}
  async saveEvent(p){return this.write(p.operation==='update'?'eventos.update':'eventos.save',this.eventPayload(p),{queue:p.operation!=='update'});}
  async eventLists(){const o=await this.read('eventos.options');return Array.from({length:Math.max(o.payers.length,o.creditors.length)},(_,i)=>[o.eventTypes[i]||'',o.payers[i]||'',o.creditors[i]||'',o.shifts[i]||'',o.delayMultiples[i]||'',o.dc[i]||'']);}
@@ -49,4 +49,20 @@ function formatLabelEditHistoryLine(entry){
   return name;
  }).filter(Boolean).join('; ');
  return `${at} - ${by}: ${changes||'Registro editado.'}`;
+}
+
+const EVENT_EDIT_FIELD_NAMES=Object.freeze({data:'Data do Evento',membro:'Membro',tipoEvento:'Tipo de Evento',descricao:'Descricao do evento',multiploAtraso:'Multiplo do atraso',substituto:'Substituto',turno:'Turno',pagador:'Pagador',credor:'Credor',valor:'Valor a pagar',source:'Origem'});
+function formatEventEditHistoryLine(entry){
+ const edit=entry&&typeof entry==='object'?entry:{};
+ const data=String(edit.at||'').trim()||'Data nao registrada';
+ const responsible=String(edit.by||'').trim()||'Responsavel nao informado';
+ const fields=Array.isArray(edit.fields)?edit.fields:[];
+ const changes=fields.map((field)=>{
+  if(field&&typeof field==='object'){
+   const name=EVENT_EDIT_FIELD_NAMES[field.name]||field.name||'Campo';
+   return `${name}: ${field.before==null?'':field.before} -> ${field.after==null?'':field.after}`;
+  }
+  return EVENT_EDIT_FIELD_NAMES[String(field)]||String(field||'').trim();
+ }).filter(Boolean).join('; ');
+ return `Data: ${data}\nResponsavel: ${responsible}\nAlteracao: ${changes||'Registro editado.'}`;
 }
