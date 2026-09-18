@@ -302,3 +302,21 @@
   dialog.report-dialog .equipment-grid { row-gap: 4px !important; }
   dialog.report-dialog .arsenal-icon { min-height: 22px !important; padding-block: 2px !important; border-radius: 11px !important; }
 }
+
+/* Altura efetiva do bloco reduzida em 20%; a area liberada fica abaixo da grade. */
+@media (max-width:680px) {
+  dialog.report-dialog .equipment-grid {
+    flex: 0 0 34dvh !important;
+    height: 34dvh !important;
+    max-height: 34dvh !important;
+    min-height: 0 !important;
+    align-content: stretch !important;
+  }
+}
+@media (max-width:380px) {
+  dialog.report-dialog .equipment-grid {
+    flex-basis: 30dvh !important;
+    height: 30dvh !important;
+    max-height: 30dvh !important;
+  }
+}
