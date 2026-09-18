@@ -1979,6 +1979,18 @@ function openEditRecord(rowOrRowNumber) {
   editContextEl.textContent = `Lancado por: ${row.criadoPor || "Nao informado"} | Criado em: ${row.criadoEm || "Nao informado"}`;
 }
 
+function normalizeEditDate(value) {
+  const text = String(value ?? "").trim();
+  if (!text) return "";
+  if (/^\d{4}-\d{2}-\d{2}$/.test(text)) return text;
+  const brMatch = text.match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
+  if (brMatch) return `${brMatch[3]}-${brMatch[2]}-${brMatch[1]}`;
+  const parsed = new Date(text);
+  if (Number.isNaN(parsed.getTime())) return "";
+  const offset = parsed.getTimezoneOffset() * 60000;
+  return new Date(parsed.getTime() - offset).toISOString().slice(0, 10);
+}
+
 function normalizeEditableRow(source) {
   if (!source) return null;
   if (Array.isArray(source)) {
@@ -2020,10 +2032,12 @@ function renderEditRecordFields() {
     .split(/[,;]+/)
     .map((item) => item.trim().toUpperCase())
     .filter(Boolean);
-  const editPlantonistaOptions = Array.from(fields.plantonistas.options)
-    .filter((option) => option.value)
-    .map((option) => {
-      const value = option.value.trim();
+  const availablePlantonistas = fields.plantonistas
+    ? Array.from(fields.plantonistas.options).map((option) => String(option.value || "").trim()).filter(Boolean)
+    : [];
+  const editPlantonistaValues = [...new Set([...availablePlantonistas, ...selectedPlantonistas])];
+  const editPlantonistaOptions = editPlantonistaValues
+    .map((value) => {
       const checked = selectedPlantonistas.includes(value.toUpperCase()) ? " checked" : "";
       return `<label><input type="checkbox" name="edit-plantonista" value="${escapeHtml(value)}"${checked}> <span>${escapeHtml(value)}</span></label>`;
     })
@@ -2038,7 +2052,7 @@ function renderEditRecordFields() {
     <div class="confirm-edit-grid">
       <label>
         <span>Data</span>
-        <input id="edit-data" type="date" value="${escapeHtml(row.data || "")}" required>
+        <input id="edit-data" type="date" value="${escapeHtml(normalizeEditDate(row.data))}" required>
       </label>
       <label class="full-width">
         <span>Nome do Paciente</span>
