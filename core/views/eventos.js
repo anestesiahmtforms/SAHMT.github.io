@@ -52,6 +52,7 @@ const {Services,localStorage,sessionStorage,document,window,navigator,location,h
   let deferredInstallPrompt = null;
   let sharedStateHash = serializeSiglaState(siglaCheckState);
   let sharedStateTimer = null;
+  let eventSharedStateReady = false;
   const pendingSharedUpdates = new Map();
   const siglaEventState = loadSiglaEventState();
   let eventRecords = [];
@@ -705,7 +706,7 @@ const {Services,localStorage,sessionStorage,document,window,navigator,location,h
       return true;
     }
 
-    return Array.isArray(siglaEventState[normalizedDate]) && siglaEventState[normalizedDate].includes(normalizedSigla);
+    return eventSharedStateReady && Array.isArray(siglaEventState[normalizedDate]) && siglaEventState[normalizedDate].includes(normalizedSigla);
   }
 
   function applySiglaCheckAppearance(token, marked) {
@@ -738,18 +739,22 @@ const {Services,localStorage,sessionStorage,document,window,navigator,location,h
 
   async function hydrateSharedSiglaState() {
     if (!sharedStateEndpoint) {
+      eventSharedStateReady = true;
       return;
     }
 
+    eventSharedStateReady = false;
     try {
       const remoteState = await fetchSharedSiglaState();
       if (remoteState) {
         replaceSiglaCheckState(removeEventSharedState(remoteState));
         replaceSiglaEventState(extractEventSharedState(remoteState));
       }
+      eventSharedStateReady = true;
       startSharedStatePolling();
     } catch (error) {
-      // If the endpoint is not configured or temporarily unavailable, keep local behavior.
+      replaceSiglaEventState({});
+      eventSharedStateReady = true;
     }
   }
 
