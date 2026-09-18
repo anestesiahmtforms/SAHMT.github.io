@@ -167,3 +167,30 @@
   dialog.report-dialog .arsenal-icon { border-radius: 18px !important; padding: 7px 2px 8px !important; font-size: .68rem !important; }
   dialog.report-dialog .arsenal-icon::after { inset: 4px !important; border-radius: 15px !important; }
 }
+
+/* Ajuste final: menos reflexo e volume de aproximadamente 2/3 dos cards da Home. */
+@media (max-width:680px) {
+  dialog.report-dialog .equipment-grid {
+    grid-template-rows: repeat(5, minmax(62px, 1fr)) !important;
+    row-gap: 11px !important;
+  }
+  dialog.report-dialog .arsenal-icon {
+    min-height: 62px !important;
+    padding: 10px 4px 11px !important;
+    box-shadow: 0 6px 0 #7898a8, 0 12px 18px rgba(20,58,78,.17), inset 0 1px 0 rgba(255,255,255,.62), inset 0 -5px 9px rgba(81,123,143,.16) !important;
+  }
+  dialog.report-dialog .arsenal-icon::before {
+    background: linear-gradient(105deg, transparent 18%, rgba(255,255,255,.32) 48%, rgba(255,255,255,.08) 62%, transparent 84%) !important;
+  }
+  dialog.report-dialog .arsenal-icon::after {
+    border-color: rgba(255,255,255,.28) !important;
+  }
+  dialog.report-dialog .arsenal-icon:hover,
+  dialog.report-dialog .arsenal-icon:focus-visible {
+    box-shadow: 0 8px 0 #7898a8, 0 16px 22px rgba(20,58,78,.2), inset 0 1px 0 rgba(255,255,255,.7), inset 0 -5px 9px rgba(81,123,143,.14) !important;
+  }
+}
+@media (max-width:380px) {
+  dialog.report-dialog .equipment-grid { row-gap: 8px !important; }
+  dialog.report-dialog .arsenal-icon { min-height: 56px !important; padding-block: 8px !important; }
+}
