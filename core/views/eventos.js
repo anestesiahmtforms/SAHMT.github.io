@@ -1835,7 +1835,7 @@ const {Services,localStorage,sessionStorage,document,window,navigator,location,h
         ["Pagador", record.pagador],
         ["Credor", record.credor],
         ["Valor a pagar", formatStoredCurrency(record.valor)],
-        ["Responsável pelo Registro", `${getRecordResponsible(record)}${record.timestamp ? ` - ${record.timestamp}` : ""}`],
+        ["Responsável pelo Registro", `${getRecordResponsible(record)}${record.timestamp ? ` - ${formatRecordTimestamp(record.timestampRaw || record.timestamp)}` : ""}`],
         ["Edicao de Registro", String(record.history || "").trim()]
       ]
         .filter(([, value]) => String(value || "").trim())
@@ -1860,7 +1860,7 @@ const {Services,localStorage,sessionStorage,document,window,navigator,location,h
           labelElement.textContent = label;
 
           const valueElement = document.createElement("span");
-          valueElement.className = "record-card__value";
+          valueElement.className = `record-card__value${label === "Responsável pelo Registro" && getRecordResponsible(record) === getAuthenticatedEmail() ? " record-card__value--authenticated-user" : ""}`;
           if (label === "Edicao de Registro") {
             row.appendChild(labelElement);
             appendHistoryDisplayBlock(row, value);
@@ -2062,6 +2062,7 @@ const {Services,localStorage,sessionStorage,document,window,navigator,location,h
     }
 
     return new Intl.DateTimeFormat("pt-BR", {
+      timeZone: "America/Sao_Paulo",
       month: "long",
       year: "numeric"
     }).format(new Date(`${normalized}-01T12:00:00`));
@@ -2432,7 +2433,7 @@ const {Services,localStorage,sessionStorage,document,window,navigator,location,h
       hour: "2-digit",
       minute: "2-digit",
       second: "2-digit"
-    }).format(parsed);
+    }).format(parsed).replace(",", "");
   }
 
   function getEventEntryEditorLabel() {

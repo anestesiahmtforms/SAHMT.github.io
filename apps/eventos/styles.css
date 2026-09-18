@@ -3235,6 +3235,12 @@ button:hover,
 }
 /* auth-authenticated-state */
 
+/* Identifica o usuario autenticado nos registros, como em Etiquetas. */
+.record-card__row--registration .record-card__value--authenticated-user {
+  color: #dc2626 !important;
+  font-weight: 950;
+}
+
 /* Relatorios de Eventos: mesmo botao-balao de Etiquetas, em proporcao segura para o modal. */
 #toggleRecordsPanel,
 #openMonthlyRecordsModal {
