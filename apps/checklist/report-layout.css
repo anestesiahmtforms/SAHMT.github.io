@@ -437,3 +437,24 @@ dialog.report-dialog {
     order: 5 !important;
   }
 }
+
+/* Rodape compacto: reducao de 15% no volume das duas acoes. */
+@media (max-width:680px) {
+  dialog.report-dialog #signatureStatus .sign-incomplete-button,
+  dialog.report-dialog #sign {
+    min-height: 41px !important;
+    padding: 6px 5px !important;
+    border-radius: 14px !important;
+  }
+  dialog.report-dialog #signatureStatus,
+  dialog.report-dialog #signatureStatus .signature-status-wrap {
+    min-height: 41px !important;
+  }
+}
+@media (max-width:380px) {
+  dialog.report-dialog #signatureStatus .sign-incomplete-button,
+  dialog.report-dialog #sign {
+    min-height: 38px !important;
+    padding-block: 5px !important;
+  }
+}
