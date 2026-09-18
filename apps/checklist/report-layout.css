@@ -563,6 +563,19 @@ dialog.report-dialog {
   }
 }
 
+/* Com o rodape vertical estabilizado, a grade usa todo o espaco restante. */
+@media (max-width:680px) {
+  dialog.report-dialog #equipmentList {
+    flex: 1 1 auto !important;
+    height: auto !important;
+    min-height: 0 !important;
+    max-height: none !important;
+    align-self: stretch !important;
+    overflow: hidden !important;
+    grid-template-rows: repeat(5, minmax(24px, 1fr)) !important;
+  }
+}
+
 /* Fluxo vertical definitivo da assinatura. */
 @media (max-width:680px) {
   dialog.report-dialog #responsible {
