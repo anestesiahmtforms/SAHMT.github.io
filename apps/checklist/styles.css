@@ -332,9 +332,9 @@ dialog{width:min(94%,560px);max-height:90dvh;overflow:auto;border:1px solid #fff
 }
 
 /* Titulo da ilustracao: reduzido para preservar os detalhes do Arsenal. */
-.arsenal-visual-title { width: min(24%, 310px); max-width: min(24%, 310px); min-height: 6%; padding: 2px 6px; border-radius: 0 0 8px 0; font-size: clamp(.42rem, 1.75vw, .72rem); letter-spacing: -.02em; line-height: 1; white-space: nowrap; overflow: hidden; text-overflow: clip; box-sizing: border-box; }
-@media (max-width: 380px) { .arsenal-visual-title { width: 26%; max-width: 26%; padding-inline: 4px; font-size: .38rem; } }
+.arsenal-visual-title { width: min(24%, 310px) !important; max-width: min(24%, 310px) !important; min-height: 6% !important; height: auto !important; padding: 2px 6px !important; border-radius: 0 0 8px 0 !important; font-size: clamp(.42rem, 1.75vw, .72rem) !important; letter-spacing: -.02em !important; line-height: 1 !important; white-space: nowrap !important; overflow: hidden !important; text-overflow: clip !important; box-sizing: border-box !important; }
+@media (max-width: 380px) { .arsenal-visual-title { width: 26% !important; max-width: 26% !important; padding-inline: 4px !important; font-size: .38rem !important; } }
 
 /* "Ler QR Code" e apenas legenda; a imagem permanece como alvo de leitura. */
 .scan-label { display: block; margin: 1px auto 0; color: var(--ink); font-size: clamp(.72rem, 3vw, .9rem); font-weight: 900; letter-spacing: .04em; line-height: 1.1; pointer-events: none; }
-@media (max-width:680px){dialog{width:95vw;max-width:95vw;height:95dvh;max-height:95dvh;margin:auto;padding:clamp(12px,3vw,24px)}}
+@media (max-width:680px){dialog{width:95vw!important;max-width:95vw!important;height:95dvh!important;max-height:95dvh!important;margin:auto;padding:clamp(12px,3vw,24px)}}

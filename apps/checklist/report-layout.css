@@ -130,10 +130,10 @@ body {
 dialog.report-dialog {
   position: fixed;
   inset: 2.5vh 2.5vw;
-  width: 95vw;
-  height: 95svh;
-  min-height: 95svh;
-  max-height: 95svh;
+  width: 95vw !important;
+  height: 95svh !important;
+  min-height: 95svh !important;
+  max-height: 95svh !important;
   box-sizing: border-box;
   transform: none !important;
   zoom: 1 !important;
@@ -169,10 +169,10 @@ dialog.report-dialog {
 @media (max-width: 430px) {
   dialog.report-dialog {
     inset: 2.5vh 2.5vw;
-    width: 95vw;
-    height: 95svh;
-    min-height: 95svh;
-    max-height: 95svh;
+    width: 95vw !important;
+    height: 95svh !important;
+    min-height: 95svh !important;
+    max-height: 95svh !important;
   }
 }
 
