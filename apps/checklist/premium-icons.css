@@ -211,3 +211,20 @@
   dialog.report-dialog .equipment-grid { row-gap: 7px !important; }
   dialog.report-dialog .arsenal-icon { min-height: 48px !important; padding-block: 7px !important; border-radius: 17px !important; }
 }
+
+/* Nova reducao de 15% no volume dos arsenais. */
+@media (max-width:680px) {
+  dialog.report-dialog .equipment-grid {
+    grid-template-rows: repeat(5, minmax(45px, 1fr)) !important;
+    row-gap: 9px !important;
+  }
+  dialog.report-dialog .arsenal-icon {
+    min-height: 45px !important;
+    padding-block: 6px !important;
+    border-radius: 18px !important;
+  }
+}
+@media (max-width:380px) {
+  dialog.report-dialog .equipment-grid { row-gap: 6px !important; }
+  dialog.report-dialog .arsenal-icon { min-height: 41px !important; padding-block: 5px !important; border-radius: 15px !important; }
+}

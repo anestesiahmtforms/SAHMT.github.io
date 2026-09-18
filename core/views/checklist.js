@@ -167,9 +167,9 @@ window.SAHMT_CHECKLIST_CONTRACT=(await import('../checklist-contract.js')).check
     const statusText=data.signature?signatureLabel(state,data.signature)+' — '+(data.signature.name || data.signature.email)+' ('+data.signature.email+'), em '+new Date(data.signature.at).toLocaleString('pt-BR',{timeZone:'America/Sao_Paulo'})+'.':!isToday?'Histórico do dia — somente consulta.':data.staleSignature?'O checklist mudou após a assinatura. É necessária uma nova assinatura.':'';
     const statusWrap=document.createElement('div');statusWrap.className='signature-status-wrap';
     if(statusText)addText(statusWrap,'p',statusText).className='signature signature-'+state;
-    const incompletePending=!data.signature&&isToday&&data.canSign;
+    const incompletePending=!data.signature&&isToday;
     const incompleteSigned=!!data.signature?.incomplete;
-    if(incompletePending||incompleteSigned){const incompleteButton=addText(statusWrap,'button',incompleteSigned?'Assinado sem Concluir':'Assinar sem concluir');incompleteButton.type='button';incompleteButton.className='sign-incomplete-button'+(incompleteSigned?' is-signed':'');incompleteButton.setAttribute('aria-label',incompleteSigned?'Ver justificativa da assinatura sem concluir':'Assinar relatório sem concluir todos os checklists');incompleteButton.onclick=()=>openIncompleteSignatureBanner(data.signature);}
+    if(incompletePending||incompleteSigned){const incompleteButton=addText(statusWrap,'button',incompleteSigned?'Assinado sem Concluir':'Assinar sem concluir');incompleteButton.type='button';incompleteButton.className='sign-incomplete-button'+(incompleteSigned?' is-signed':'');incompleteButton.disabled=!data.canSign&&!incompleteSigned;incompleteButton.setAttribute('aria-label',incompleteSigned?'Ver justificativa da assinatura sem concluir':'Assinar relatório sem concluir todos os checklists');incompleteButton.onclick=()=>openIncompleteSignatureBanner(data.signature);}
     $('signatureStatus').append(statusWrap);
     $('signForm').hidden=!!data.signature || !isToday;$('declaration').checked=false;
     $('sign').disabled=!!data.signature || !isToday || !data.canSign || !done || done!==activeItems.length;
