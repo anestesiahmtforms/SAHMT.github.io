@@ -546,6 +546,23 @@ dialog.report-dialog {
   }
 }
 
+/* Override final: o ID vence as regras antigas que esticavam a grade. */
+@media (max-width:680px) {
+  dialog.report-dialog #equipmentList {
+    flex: 0 0 34dvh !important;
+    height: 34dvh !important;
+    min-height: 0 !important;
+    max-height: 34dvh !important;
+  }
+}
+@media (max-width:380px) {
+  dialog.report-dialog #equipmentList {
+    flex-basis: 30dvh !important;
+    height: 30dvh !important;
+    max-height: 30dvh !important;
+  }
+}
+
 /* Rodape compacto: reducao de 15% no volume das duas acoes. */
 @media (max-width:680px) {
   dialog.report-dialog #signatureStatus .sign-incomplete-button,
