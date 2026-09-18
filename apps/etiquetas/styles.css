@@ -6479,3 +6479,9 @@ body::before {
 @media (max-width: 680px) {
   .modal-panel, #confirm-overlay .confirm-card, #edit-overlay .edit-card { inset: max(2.5dvh, env(safe-area-inset-top, 0px)) max(2.5vw, env(safe-area-inset-right, 0px)) max(2.5dvh, env(safe-area-inset-bottom, 0px)) max(2.5vw, env(safe-area-inset-left, 0px)) !important; width: auto !important; max-width: none !important; height: auto !important; max-height: none !important; }
 }
+
+@media (max-width:680px){
+  .modal-panel,.confirm-overlay .confirm-card{position:fixed!important;inset:2.5dvh 2.5vw!important;width:95vw!important;height:95dvh!important;max-width:95vw!important;max-height:95dvh!important;margin:0!important;overflow:hidden!important;transform:none!important;box-sizing:border-box!important}
+  .modal-panel>* ,.confirm-card>*{min-width:0!important;max-width:100%!important;box-sizing:border-box!important}
+  .modal-panel .modal-body,.modal-panel .records-list,.modal-panel .monthly-report-panel{min-height:0!important;max-height:100%!important;overflow:hidden!important}
+}

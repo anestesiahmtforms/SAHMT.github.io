@@ -2132,3 +2132,11 @@ button:hover,
   .events-sheet { inset: 2.5dvh 2.5vw; width: auto; min-height: 0; }
   .contact-sheet, .notice-card { margin: auto; }
 }
+
+/* Modais fixos e sem rolagem: o conteudo interno se compacta para a area disponivel. */
+@media (max-width: 680px) {
+  .contact-modal, .events-modal, .notice-modal { position: fixed !important; inset: 0 !important; overflow: hidden !important; }
+  .contact-sheet, .events-sheet, .notice-card { position: fixed !important; inset: 2.5dvh 2.5vw !important; width: 95vw !important; height: 95dvh !important; max-width: 95vw !important; max-height: 95dvh !important; margin: 0 !important; overflow: hidden !important; box-sizing: border-box !important; transform: none !important; }
+  .contact-sheet > *, .events-sheet > *, .notice-card > * { min-width: 0 !important; max-width: 100% !important; box-sizing: border-box !important; }
+  .contact-sheet__body, .events-sheet__body, .events-frame-wrap, .notice-card__body { min-height: 0 !important; max-height: 100% !important; overflow: hidden !important; }
+}

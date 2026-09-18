@@ -249,3 +249,11 @@ dialog.report-dialog {
 .report-dialog .incomplete-signature-banner {
   margin-top: 4px;
 }
+
+/* Relatorio fixo sem barras: blocos internos ocupam a area restante. */
+@media (max-width:680px) {
+  dialog.report-dialog { position: fixed !important; inset: 2.5dvh 2.5vw !important; width: 95vw !important; height: 95dvh !important; max-width: 95vw !important; max-height: 95dvh !important; overflow: hidden !important; transform: none !important; zoom: 1 !important; }
+  dialog.report-dialog > * { min-width: 0 !important; max-width: 100% !important; box-sizing: border-box !important; }
+  dialog.report-dialog .equipment-grid { min-height: 0 !important; overflow: hidden !important; grid-auto-rows: minmax(0, 1fr) !important; }
+  dialog.report-dialog .declaration, dialog.report-dialog .responsible-compact, dialog.report-dialog #signatureStatus, dialog.report-dialog #signForm, dialog.report-dialog #incompleteSignatureBanner { flex-shrink: 1 !important; min-height: 0 !important; }
+}

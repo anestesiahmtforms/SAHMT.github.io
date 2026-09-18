@@ -30,6 +30,11 @@ dialog{position:fixed;margin:0;inset:0}
 @media(max-width:380px){.module-link-strip{gap:8px}.module-link-strip a{min-height:82px;padding:7px 4px 9px;border-radius:22px}.module-link-strip a::after{inset:4px;border-radius:18px}.module-link-strip img{width:52px;height:48px}.module-link-strip span{padding:3px 5px;font-size:.52rem}}
 @media(max-width:680px){#training-player[open],#training-question[open]{top:2.5dvh!important;right:2.5vw!important;bottom:2.5dvh!important;left:2.5vw!important;width:auto!important;height:95dvh!important;max-width:none!important;max-height:95dvh!important;margin:0}}
 
+@media(max-width:680px){
+  #training-player[open],#training-question[open]{position:fixed!important;overflow:hidden!important;transform:none!important;zoom:1!important;box-sizing:border-box!important}
+  #training-player[open]>* ,#training-question[open]>*{min-width:0!important;max-width:100%!important;box-sizing:border-box!important}
+}
+
 /* Catálogo ocupa o centro; navegação de logos fica reservada ao rodapé. */
 .training-app { height: 100dvh; min-height: 100dvh; display: grid; grid-template-rows: auto auto minmax(0, 1fr) auto auto; align-content: stretch; gap: 6px; padding-top: max(10px, env(safe-area-inset-top)); padding-bottom: max(6px, env(safe-area-inset-bottom)); }
 #training-status { min-height: 0; margin: 0; }
