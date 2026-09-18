@@ -3,6 +3,17 @@
 @media(max-width:430px){.report-dialog .equipment-grid{gap:6px;margin:6px 0}.report-dialog .arsenal-icon{min-height:44px;font-size:.72rem}.report-dialog .arsenal-number{font-size:.66rem}}
 .report-dialog .equipment-grid{grid-auto-rows:minmax(54px,1fr);align-content:stretch}.report-dialog .arsenal-icon{min-height:54px;font-size:.84rem}.report-dialog .arsenal-number{font-size:.76rem}
 @media(max-width:430px){.report-dialog .equipment-grid{grid-auto-rows:minmax(48px,1fr)}.report-dialog .arsenal-icon{min-height:48px;font-size:.74rem}.report-dialog .arsenal-number{font-size:.68rem}}
+
+/* Relatorio diario: grade arejada e equilibrada com a assinatura inferior. */
+.report-dialog .equipment-grid { grid-template-columns: repeat(4, minmax(0, 1fr)) !important; column-gap: 9px !important; row-gap: 11px !important; padding: 8px 6px 10px !important; margin: 4px 0 8px !important; align-content: stretch !important; }
+.report-dialog .equipment { min-width: 0 !important; min-height: 0 !important; display: flex !important; align-items: stretch !important; }
+.report-dialog .arsenal-icon { min-height: 56px !important; height: 100% !important; padding: 7px 4px !important; border-radius: 15px !important; font-size: .78rem !important; }
+.report-dialog .arsenal-number { font-size: .78rem !important; }
+@media(max-width:430px){
+  .report-dialog .equipment-grid { column-gap: 7px !important; row-gap: 9px !important; padding: 7px 4px 9px !important; margin: 3px 0 6px !important; }
+  .report-dialog .arsenal-icon { min-height: 50px !important; padding: 6px 3px !important; border-radius: 13px !important; font-size: .7rem !important; }
+  .report-dialog .arsenal-number { font-size: .7rem !important; }
+}
 /* Banners dos arsenais: texto sempre contido, legível e quebrado em telas estreitas. */
 .status-banner{box-sizing:border-box;max-width:100%;max-height:min(180px,32vh);overflow:auto;overflow-wrap:anywhere;word-break:break-word;white-space:normal;line-height:1.3;text-align:center}
 .status-banner strong,.status-banner p{display:block;max-width:100%;overflow-wrap:anywhere;word-break:break-word;white-space:pre-wrap}

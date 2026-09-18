@@ -257,3 +257,9 @@ dialog.report-dialog {
   dialog.report-dialog .equipment-grid { min-height: 0 !important; overflow: hidden !important; grid-auto-rows: minmax(0, 1fr) !important; }
   dialog.report-dialog .declaration, dialog.report-dialog .responsible-compact, dialog.report-dialog #signatureStatus, dialog.report-dialog #signForm, dialog.report-dialog #incompleteSignatureBanner { flex-shrink: 1 !important; min-height: 0 !important; }
 }
+
+@media (max-width:680px) {
+  dialog.report-dialog .equipment-grid { flex: 1 1 58% !important; min-height: 250px !important; align-content: stretch !important; }
+  dialog.report-dialog #responsible { flex: 0 1 12% !important; }
+  dialog.report-dialog #signatureStatus, dialog.report-dialog #signForm, dialog.report-dialog > button[data-close="reportDialog"] { flex: 0 1 auto !important; }
+}
