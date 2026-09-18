@@ -4,7 +4,16 @@ export class SessionManager {
   snapshot(){return {...this.state,generation:this.generation};}
   restore(){try{const s=JSON.parse(this.storage.getItem(KEY)||'null');if(s?.token&&s.user?.email&&s.expiresAt>Date.now()){this.state={...s,status:'validating'};return;}this.storage.removeItem(KEY);}catch{} }
   emit(){this.onChange(this.snapshot());}
-  async login(credential){const result=await this.api.call('auth.login',{credential});this.generation++;this.state={...result,status:'authenticated'};this.confirmedAt=Date.now();this.persist();this.emit();return this.snapshot();}
+  async login(credential){
+    let result;
+    let lastError;
+    for(let attempt=0;attempt<2;attempt++){
+      try{result=await this.api.call('auth.login',{credential},{timeoutMs:45000});break;}
+      catch(error){lastError=error;if(!error?.retryable||attempt===1)throw error;await new Promise(resolve=>setTimeout(resolve,700));}
+    }
+    if(!result)throw lastError||new Error('Não foi possível autenticar.');
+    this.generation++;this.state={...result,status:'authenticated'};this.confirmedAt=Date.now();this.persist();this.emit();return this.snapshot();
+  }
   // Navigation reuses a verified, unexpired session. API reads/writes still
   // call confirm(), and the server checks authorization on every request.
   async access(){if(this.state.status==='authenticated'&&this.state.expiresAt>Date.now())return this.snapshot();return this.confirm();}
