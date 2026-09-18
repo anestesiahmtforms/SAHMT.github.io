@@ -525,6 +525,25 @@ dialog.report-dialog {
     overflow: hidden !important;
     box-sizing: border-box !important;
   }
+  dialog.report-dialog #responsible,
+  dialog.report-dialog #reportSignActions,
+  dialog.report-dialog > button[data-close="reportDialog"] {
+    flex-shrink: 0 !important;
+  }
+  dialog.report-dialog #responsible {
+    min-height: 34px !important;
+    max-height: 52px !important;
+    overflow: hidden !important;
+  }
+  dialog.report-dialog #reportSignActions,
+  dialog.report-dialog #reportSignActions.mode-ready,
+  dialog.report-dialog #reportSignActions.mode-signed-complete,
+  dialog.report-dialog #reportSignActions.mode-signed-incomplete,
+  dialog.report-dialog #reportSignActions.mode-history,
+  dialog.report-dialog #reportSignActions.mode-stale,
+  dialog.report-dialog #reportSignActions.mode-locked {
+    flex-shrink: 0 !important;
+  }
 }
 
 /* Rodape compacto: reducao de 15% no volume das duas acoes. */
