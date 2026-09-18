@@ -19,7 +19,8 @@
 @media(max-width:680px){
   .report-dialog .equipment-grid { grid-template-columns: repeat(3, minmax(0, 1fr)) !important; grid-template-rows: repeat(6, minmax(0, 1fr)) !important; grid-auto-rows: unset !important; width: 100% !important; flex: 1 1 auto !important; align-content: stretch !important; justify-content: stretch !important; gap: 10px 9px !important; padding: 8px 7px 10px !important; margin: 5px 0 8px !important; }
   .report-dialog .equipment { min-height: 0 !important; height: auto !important; }
-  .report-dialog .arsenal-icon { min-height: 0 !important; height: 100% !important; width: 100% !important; padding: 6px 3px !important; border-radius: 14px !important; }
+  .report-dialog .arsenal-icon { min-height: 0 !important; height: 100% !important; width: 100% !important; padding: 8px 4px !important; border-radius: 17px !important; font-size: .8rem !important; box-shadow: 0 0 0 1px #ffffffd9, 0 8px 16px #0000001c, 0 0 15px #00000014, inset 0 2px 0 #fffffff0 !important; }
+  .report-dialog .arsenal-number { font-size: .78rem !important; }
 }
 /* Banners dos arsenais: texto sempre contido, legível e quebrado em telas estreitas. */
 .status-banner{box-sizing:border-box;max-width:100%;max-height:min(180px,32vh);overflow:auto;overflow-wrap:anywhere;word-break:break-word;white-space:normal;line-height:1.3;text-align:center}

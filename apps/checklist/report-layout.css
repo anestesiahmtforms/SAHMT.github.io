@@ -268,3 +268,92 @@ dialog.report-dialog {
   dialog.report-dialog #equipmentList { flex: 1 1 auto !important; min-height: 300px !important; max-height: none !important; }
   dialog.report-dialog #responsible { flex: 0 0 auto !important; min-height: 42px !important; }
 }
+
+/* Rodape do relatorio diario: controles separados, fixos e sem sobreposicao. */
+@media (max-width:680px) {
+  dialog.report-dialog {
+    display: flex !important;
+    flex-direction: column !important;
+    justify-content: flex-start !important;
+  }
+  dialog.report-dialog #equipmentList {
+    order: 1 !important;
+    flex: 1 1 auto !important;
+    min-height: 0 !important;
+    margin: 5px 0 6px !important;
+  }
+  dialog.report-dialog #responsible {
+    order: 2 !important;
+    flex: 0 0 auto !important;
+    min-height: 34px !important;
+    margin: 2px 0 3px !important;
+    padding: 4px 8px !important;
+  }
+  dialog.report-dialog #signatureStatus {
+    order: 3 !important;
+    display: flex !important;
+    flex: 0 0 auto !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    justify-content: center !important;
+    width: 100% !important;
+    min-height: 29px !important;
+    margin: 1px 0 !important;
+  }
+  dialog.report-dialog #signatureStatus .signature-status-wrap {
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 2px !important;
+    width: 100% !important;
+  }
+  dialog.report-dialog #signatureStatus .signature-status-wrap > p {
+    order: 1 !important;
+    margin: 0 !important;
+    max-width: 100% !important;
+    text-align: center !important;
+  }
+  dialog.report-dialog #signatureStatus .sign-incomplete-button {
+    order: 2 !important;
+    position: static !important;
+    transform: none !important;
+    display: block !important;
+    min-height: 30px !important;
+    margin: 2px auto 3px !important;
+    z-index: 3 !important;
+  }
+  dialog.report-dialog #signForm {
+    order: 4 !important;
+    flex: 0 0 auto !important;
+    width: 100% !important;
+    margin: 0 !important;
+    position: static !important;
+    z-index: 2 !important;
+  }
+  dialog.report-dialog #signForm .declaration {
+    margin: 2px 0 3px !important;
+    line-height: 1.1 !important;
+    font-size: .56rem !important;
+  }
+  dialog.report-dialog #sign {
+    position: static !important;
+    display: block !important;
+    width: 100% !important;
+    min-height: 48px !important;
+    margin: 0 !important;
+    z-index: 2 !important;
+  }
+  dialog.report-dialog #incompleteSignatureBanner {
+    order: 5 !important;
+    position: static !important;
+    flex: 0 0 auto !important;
+  }
+  dialog.report-dialog > button[data-close="reportDialog"] {
+    order: 6 !important;
+    position: static !important;
+    flex: 0 0 auto !important;
+    min-height: 30px !important;
+    margin: 3px 0 0 !important;
+  }
+}
