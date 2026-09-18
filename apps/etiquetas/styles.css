@@ -6095,6 +6095,17 @@ body::before {
   margin-top: 8px;
   margin-bottom: 8px;
 }
+/* Faixa premium 3D: botoes maiores, balonados e faceis de tocar. */
+.module-link-strip { gap: 12px; padding: 0; background: transparent!important; border: 0!important; box-shadow: none!important; }
+.module-link-strip a, .module-link-card, .return-strip a { position: relative; isolation: isolate; min-height: 96px; padding: 10px 7px 12px; overflow: hidden; border: 1px solid rgba(255,255,255,.98); border-radius: 26px; background: linear-gradient(145deg,rgba(255,255,255,.99),rgba(241,248,250,.97) 48%,rgba(204,222,229,.94)); color: #12324f; box-shadow: 0 7px 0 #91abb6,0 16px 25px rgba(20,58,78,.2),inset 0 2px 0 rgba(255,255,255,.98),inset 0 -5px 9px rgba(81,123,143,.12); transition: transform 170ms ease,filter 170ms ease,box-shadow 170ms ease; -webkit-tap-highlight-color: transparent; }
+.module-link-strip a::before, .module-link-card::before, .return-strip a::before { content:""; position:absolute; z-index:-1; inset:-32% -24% auto; height:64%; border-radius:50%; background:linear-gradient(105deg,transparent 18%,rgba(255,255,255,.92) 48%,rgba(255,255,255,.28) 62%,transparent 84%); transform:rotate(-8deg); pointer-events:none; }
+.module-link-strip a::after, .module-link-card::after, .return-strip a::after { content:""; position:absolute; inset:5px; border:1px solid rgba(255,255,255,.55); border-radius:21px; pointer-events:none; }
+.module-link-strip a:hover,.module-link-strip a:focus-visible,.module-link-card:hover,.module-link-card:focus-visible,.return-strip a:hover,.return-strip a:focus-visible { transform:translateY(-4px) scale(1.015); filter:brightness(1.035) saturate(1.04); outline:none; box-shadow:0 10px 0 #91abb6,0 21px 30px rgba(20,58,78,.25),inset 0 2px 0 #fff,inset 0 -5px 9px rgba(81,123,143,.1); }
+.module-link-strip a:focus-visible,.module-link-card:focus-visible,.return-strip a:focus-visible { outline:3px solid rgba(39,143,190,.48); outline-offset:3px; }
+.module-link-strip a:active,.module-link-card:active,.return-strip a:active { transform:translateY(5px) scale(.975); box-shadow:0 2px 0 #91abb6,0 7px 12px rgba(20,58,78,.18),inset 0 3px 7px rgba(26,66,86,.14); }
+.module-link-strip img,.module-link-card__image,.return-strip img { position:relative; z-index:1; width:min(100%,62px); height:58px; object-fit:contain; filter:drop-shadow(0 8px 7px rgba(18,50,72,.24)); }
+.module-link-strip span,.module-link-card span,.return-strip span { position:relative; z-index:1; padding:4px 8px; border:1px solid rgba(255,255,255,.86); border-radius:999px; background:rgba(255,255,255,.78); color:#12324f; font-size:clamp(.55rem,1.7vw,.68rem); line-height:1.05; letter-spacing:.02em; box-shadow:inset 0 1px 1px rgba(255,255,255,.9),0 2px 4px rgba(21,61,82,.1); }
+@media(max-width:380px){.module-link-strip{gap:8px}.module-link-strip a,.module-link-card,.return-strip a{min-height:82px;padding:7px 4px 9px;border-radius:22px}.module-link-strip a::after,.module-link-card::after,.return-strip a::after{inset:4px;border-radius:18px}.module-link-strip img,.module-link-card__image,.return-strip img{width:52px;height:48px}.module-link-strip span,.module-link-card span,.return-strip span{padding:3px 5px;font-size:.52rem}}
 
 /* Etiquetas: comandos principais com acabamento premium 3D e toque confortavel. */
 .scanner-panel .capture-shutter,

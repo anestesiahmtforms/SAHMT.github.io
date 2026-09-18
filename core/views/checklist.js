@@ -210,7 +210,6 @@ window.SAHMT_CHECKLIST_CONTRACT=(await import('../checklist-contract.js')).check
     }catch(error){$('monthlySummary').textContent='Não foi possível carregar o mês.';throw error;}
   }
   async function run(action){if(busy)return;busy=true;try{await action();}catch(error){fail(error);}finally{busy=false;}}
-  $('scan').onclick=()=>run(startCamera);
   $('scanSymbol').onclick=()=>run(startCamera);
   $('photo').onchange=()=>run(async()=>{const file=$('photo').files[0];if(!file)return;try{const bitmap=await createImageBitmap(file);let qr;try{qr=decode(bitmap,bitmap.width,bitmap.height);}finally{bitmap.close();}if(!qr)throw new Error('QR Code não identificado. Fotografe de frente, com boa iluminação.');await identify(qr);}finally{$('photo').value='';}});
   document.querySelectorAll('[data-close]').forEach(button=>button.onclick=()=>close(button.dataset.close));
@@ -248,7 +247,7 @@ window.SAHMT_CHECKLIST_CONTRACT=(await import('../checklist-contract.js')).check
     session=value;const slot=document.querySelector('[data-auth-user]');
     if(slot){slot.textContent=value?.email||'';slot.hidden=!value?.email;slot.dataset.authenticated=String(value?.authenticated===true);}
     const enabled=value?.authenticated===true&&!!cfg.apiUrl;
-    for(const id of ['scan','scanSymbol','photo','report','monthly'])if($(id))$(id).disabled=!enabled;
+    for(const id of ['scanSymbol','photo','report','monthly'])if($(id))$(id).disabled=!enabled;
   }
   window.addEventListener('message',event=>{if(event.origin!==cfg.parentOrigin || event.source!==window.parent || event.data?.type!=='sahmt-checklist-session')return;receiveSession(event.data.session);});
   if($('today'))$('today').textContent=new Intl.DateTimeFormat('pt-BR',{dateStyle:'full',timeZone:'America/Sao_Paulo'}).format(new Date());

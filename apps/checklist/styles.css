@@ -330,3 +330,11 @@ dialog{width:min(94%,560px);max-height:90dvh;overflow:auto;border:1px solid #fff
   margin-top: 8px;
   margin-bottom: 8px;
 }
+
+/* Titulo da ilustracao: reduzido para preservar os detalhes do Arsenal. */
+.arsenal-visual-title { width: min(24%, 310px); min-height: 6%; padding: 2px 6px; border-radius: 0 0 8px 0; font-size: clamp(.48rem, 2.28vw, .93rem); }
+@media (max-width: 380px) { .arsenal-visual-title { width: 26%; padding-inline: 4px; font-size: .42rem; } }
+
+/* "Ler QR Code" e apenas legenda; a imagem permanece como alvo de leitura. */
+.scan-label { display: block; margin: 1px auto 0; color: var(--ink); font-size: clamp(.72rem, 3vw, .9rem); font-weight: 900; letter-spacing: .04em; line-height: 1.1; pointer-events: none; }
+@media (max-width:680px){dialog{width:98vw;max-width:98vw;height:98dvh;max-height:98dvh;margin:auto;padding:clamp(12px,3vw,24px)}}
