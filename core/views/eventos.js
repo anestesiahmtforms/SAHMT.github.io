@@ -2247,7 +2247,7 @@ const {Services,localStorage,sessionStorage,document,window,navigator,location,h
         const block = document.createElement("div");
         block.className = "record-card__history-entry";
 
-        appendHistoryLine(block, "Data", entry.data);
+        appendHistoryLine(block, "Data", formatHistoryDateForDisplay(entry.data));
         appendHistoryLine(block, "Responsável", entry.responsavel);
         const states = splitHistoryStates(entry.alteracao);
         appendHistoryLine(block, "Estado inicial", states.initial);
@@ -2279,6 +2279,15 @@ const {Services,localStorage,sessionStorage,document,window,navigator,location,h
     line.appendChild(labelElement);
     line.appendChild(valueElement);
     container.appendChild(line);
+  }
+
+  function formatHistoryDateForDisplay(value) {
+    const text = String(value || "").trim();
+    if (!text) return "Data não registrada";
+    if (/^\d{2}\/\d{2}\/\d{4}(?:\s+\d{2}:\d{2}(?::\d{2})?)?$/.test(text)) return text;
+    const parsed = new Date(text);
+    if (Number.isNaN(parsed.getTime())) return text;
+    return new Intl.DateTimeFormat("pt-BR", {timeZone:"America/Sao_Paulo",day:"2-digit",month:"2-digit",year:"numeric",hour:"2-digit",minute:"2-digit",hour12:false}).format(parsed).replace(",", "");
   }
 
   function splitHistoryStates(value) {

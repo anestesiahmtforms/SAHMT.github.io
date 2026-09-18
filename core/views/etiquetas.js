@@ -1923,7 +1923,7 @@ function renderEditHistoryEntry(line) {
   });
 
   return `<div class="record-card__history-entry">
-    ${renderHistoryLine("Data", date)}
+    ${renderHistoryLine("Data", formatHistoryDateForDisplay(date))}
     ${renderHistoryLine("Responsável", responsible)}
     ${renderHistoryLine("Estado inicial", initial.join("; ") || "Não informado")}
     ${renderHistoryLine("Estado editado", edited.join("; ") || "Não informado")}
@@ -1935,6 +1935,15 @@ function renderHistoryLine(label, value) {
     ? " record-card__history-value--authenticated-user"
     : "";
   return `<div class="record-card__history-line"><span class="record-card__history-label">${escapeHtml(label)}:</span><span class="record-card__history-value${userClass}">${escapeHtml(value)}</span></div>`;
+}
+
+function formatHistoryDateForDisplay(value) {
+  const text = String(value || "").trim();
+  if (!text) return "Sem data registrada";
+  if (/^\d{2}\/\d{2}\/\d{4}(?:\s+\d{2}:\d{2}(?::\d{2})?)?$/.test(text)) return text;
+  const parsed = new Date(text);
+  if (Number.isNaN(parsed.getTime())) return text;
+  return new Intl.DateTimeFormat("pt-BR", {timeZone:"America/Sao_Paulo",day:"2-digit",month:"2-digit",year:"numeric",hour:"2-digit",minute:"2-digit",hour12:false}).format(parsed).replace(",", "");
 }
 
 function composeHistoryLine(dateTime, responsible, detail) {
