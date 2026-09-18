@@ -33,3 +33,75 @@
 .check-banner-button{display:block;width:100%;min-height:34px;margin:8px 0 0;padding:7px 12px;border:1px solid #104b7d;border-radius:9px;color:#fff;background:linear-gradient(135deg,#2b83c6,#1762a1);box-shadow:0 4px 9px rgba(23,98,161,.22),inset 0 1px 0 rgba(255,255,255,.35);font:inherit;font-size:.62rem;font-weight:900;letter-spacing:.06em;line-height:1;white-space:nowrap;cursor:pointer;touch-action:manipulation}
 .check-banner-button:hover,.check-banner-button:focus-visible{background:linear-gradient(135deg,#3a96d7,#1b6fae);transform:translateY(-1px)}
 .check-banner-button:active{transform:scale(.98)}
+
+/* Relatorio diario: arsenais com o mesmo desenho premium das siglas de Eventos. */
+.report-dialog .arsenal-icon {
+  border-width: 1px !important;
+  border-style: solid !important;
+  border-radius: 999px !important;
+  letter-spacing: .015em !important;
+  text-shadow: 0 1px 1px rgba(0,0,0,.18) !important;
+  box-shadow:
+    0 0 0 2px rgba(255,255,255,.86),
+    0 8px 17px rgba(13,50,87,.15),
+    inset 0 1px 0 rgba(255,255,255,.96),
+    inset 0 -3px 8px rgba(72,139,159,.16) !important;
+  transition: transform 140ms ease, box-shadow 180ms ease, filter 180ms ease !important;
+}
+.report-dialog .arsenal-icon:hover,
+.report-dialog .arsenal-icon:focus-visible {
+  transform: translateY(-1px) !important;
+  filter: brightness(1.04) saturate(1.04) !important;
+  box-shadow:
+    0 0 0 2px rgba(255,255,255,.95),
+    0 11px 22px rgba(13,50,87,.2),
+    inset 0 1px 0 rgba(255,255,255,1),
+    inset 0 -3px 8px rgba(72,139,159,.2) !important;
+}
+.report-dialog .arsenal-icon:active {
+  transform: scale(.95) !important;
+  box-shadow:
+    0 0 0 2px rgba(255,255,255,.78),
+    0 3px 7px rgba(13,50,87,.16),
+    inset 0 2px 7px rgba(0,0,0,.12) !important;
+}
+.report-dialog .equipment.PENDENTE .arsenal-icon {
+  background: linear-gradient(180deg, #ff9b9b 0%, #ef4444 52%, #b91c1c 100%) !important;
+  border-color: rgba(185,28,28,.92) !important;
+  box-shadow:
+    0 0 0 2px rgba(254,226,226,.96),
+    0 0 10px rgba(239,68,68,.3),
+    inset 0 1px 0 rgba(255,255,255,.26),
+    inset 0 -4px 9px rgba(127,12,12,.18),
+    0 8px 18px rgba(153,27,27,.18) !important;
+}
+.report-dialog .equipment.SIM .arsenal-icon {
+  background: linear-gradient(180deg, #86efac 0%, #4ade80 48%, #229653 100%) !important;
+  border-color: rgba(34,197,94,.88) !important;
+  box-shadow:
+    0 0 0 2px rgba(220,252,231,.96),
+    0 0 10px rgba(74,222,128,.34),
+    inset 0 1px 0 rgba(255,255,255,.3),
+    inset 0 -4px 9px rgba(21,128,61,.18),
+    0 8px 18px rgba(21,128,61,.16) !important;
+}
+.report-dialog .equipment.NAO .arsenal-icon {
+  background: linear-gradient(180deg, #fff0a6 0%, #f4cf58 48%, #c58d1e 100%) !important;
+  border-color: rgba(168,115,18,.88) !important;
+  box-shadow:
+    0 0 0 2px rgba(254,243,199,.98),
+    0 0 12px rgba(217,151,37,.3),
+    inset 0 1px 0 rgba(255,255,255,.34),
+    inset 0 -4px 9px rgba(145,93,8,.16),
+    0 8px 18px rgba(180,120,10,.16) !important;
+}
+.report-dialog .equipment.MANUTENCAO .arsenal-icon {
+  background: linear-gradient(180deg, #a9ddff 0%, #4f9bd1 48%, #1762a1 100%) !important;
+  border-color: rgba(16,75,125,.9) !important;
+  box-shadow:
+    0 0 0 2px rgba(219,241,255,.96),
+    0 0 12px rgba(23,98,161,.32),
+    inset 0 1px 0 rgba(255,255,255,.34),
+    inset 0 -4px 9px rgba(13,50,87,.18),
+    0 8px 18px rgba(13,50,87,.17) !important;
+}
