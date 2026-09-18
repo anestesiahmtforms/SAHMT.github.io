@@ -285,3 +285,20 @@
   }
   dialog.report-dialog .arsenal-icon { min-height: 27px !important; padding-block: 3px !important; border-radius: 13px !important; }
 }
+
+/* Reducao adicional de 20% somente nos botoes dos arsenais. */
+@media (max-width:680px) {
+  dialog.report-dialog .equipment-grid {
+    grid-template-rows: repeat(5, minmax(24px, 1fr)) !important;
+    row-gap: 5px !important;
+  }
+  dialog.report-dialog .arsenal-icon {
+    min-height: 24px !important;
+    padding-block: 3px !important;
+    border-radius: 13px !important;
+  }
+}
+@media (max-width:380px) {
+  dialog.report-dialog .equipment-grid { row-gap: 4px !important; }
+  dialog.report-dialog .arsenal-icon { min-height: 22px !important; padding-block: 2px !important; border-radius: 11px !important; }
+}
