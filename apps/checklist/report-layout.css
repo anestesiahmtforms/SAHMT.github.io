@@ -263,3 +263,8 @@ dialog.report-dialog {
   dialog.report-dialog #responsible { flex: 0 1 12% !important; }
   dialog.report-dialog #signatureStatus, dialog.report-dialog #signForm, dialog.report-dialog > button[data-close="reportDialog"] { flex: 0 1 auto !important; }
 }
+
+@media (max-width:680px) {
+  dialog.report-dialog #equipmentList { flex: 1 1 auto !important; min-height: 300px !important; max-height: none !important; }
+  dialog.report-dialog #responsible { flex: 0 0 auto !important; min-height: 42px !important; }
+}

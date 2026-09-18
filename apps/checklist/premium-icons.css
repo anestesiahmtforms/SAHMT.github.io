@@ -14,6 +14,13 @@
   .report-dialog .arsenal-icon { min-height: 50px !important; padding: 6px 3px !important; border-radius: 13px !important; font-size: .7rem !important; }
   .report-dialog .arsenal-number { font-size: .7rem !important; }
 }
+
+/* Smartphones: tres colunas distribuem os arsenais pela altura disponivel. */
+@media(max-width:680px){
+  .report-dialog .equipment-grid { grid-template-columns: repeat(3, minmax(0, 1fr)) !important; grid-template-rows: repeat(6, minmax(0, 1fr)) !important; grid-auto-rows: unset !important; width: 100% !important; flex: 1 1 auto !important; align-content: stretch !important; justify-content: stretch !important; gap: 10px 9px !important; padding: 8px 7px 10px !important; margin: 5px 0 8px !important; }
+  .report-dialog .equipment { min-height: 0 !important; height: auto !important; }
+  .report-dialog .arsenal-icon { min-height: 0 !important; height: 100% !important; width: 100% !important; padding: 6px 3px !important; border-radius: 14px !important; }
+}
 /* Banners dos arsenais: texto sempre contido, legível e quebrado em telas estreitas. */
 .status-banner{box-sizing:border-box;max-width:100%;max-height:min(180px,32vh);overflow:auto;overflow-wrap:anywhere;word-break:break-word;white-space:normal;line-height:1.3;text-align:center}
 .status-banner strong,.status-banner p{display:block;max-width:100%;overflow-wrap:anywhere;word-break:break-word;white-space:pre-wrap}
