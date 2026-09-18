@@ -563,6 +563,69 @@ dialog.report-dialog {
   }
 }
 
+/* Fluxo vertical definitivo da assinatura. */
+@media (max-width:680px) {
+  dialog.report-dialog #responsible {
+    display: flex !important;
+    flex-direction: column !important;
+    justify-content: center !important;
+    align-items: center !important;
+    min-height: 42px !important;
+    max-height: 58px !important;
+    margin: 4px 0 5px !important;
+    padding: 6px 9px !important;
+    border: 1px solid rgba(255,255,255,.9) !important;
+    border-radius: 16px !important;
+    background: linear-gradient(145deg,#fff,#e4eef3 56%,#b8d0dc) !important;
+    box-shadow: 0 5px 0 #7898a8, 0 10px 16px rgba(26,73,98,.14), inset 0 1px 0 #fff !important;
+    text-align: center !important;
+  }
+  dialog.report-dialog #responsible strong { font-size: .62rem !important; }
+  dialog.report-dialog #responsible p { font-size: .62rem !important; }
+  dialog.report-dialog #reportSignActions.mode-ready {
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: 6px !important;
+    width: 100% !important;
+    min-height: 0 !important;
+  }
+  dialog.report-dialog #reportSignActions.mode-ready #signForm {
+    order: 1 !important;
+    display: flex !important;
+    width: 100% !important;
+    min-height: 41px !important;
+  }
+  dialog.report-dialog #reportSignActions.mode-ready #signatureStatus {
+    order: 2 !important;
+    display: flex !important;
+    width: 100% !important;
+    min-height: 41px !important;
+  }
+  dialog.report-dialog #reportSignActions.mode-ready #signForm .declaration { display: none !important; }
+  dialog.report-dialog #reportSignActions.mode-ready #sign,
+  dialog.report-dialog #reportSignActions.mode-ready .sign-incomplete-button {
+    width: 100% !important;
+    min-height: 41px !important;
+    margin: 0 !important;
+    border-radius: 14px !important;
+  }
+  dialog.report-dialog #reportSignActions.mode-signed-complete,
+  dialog.report-dialog #reportSignActions.mode-history,
+  dialog.report-dialog #reportSignActions.mode-stale,
+  dialog.report-dialog #reportSignActions.mode-locked {
+    display: none !important;
+  }
+  dialog.report-dialog #reportSignActions.mode-signed-incomplete {
+    display: block !important;
+    width: 100% !important;
+    min-height: 0 !important;
+  }
+  dialog.report-dialog #reportSignActions.mode-signed-incomplete #signForm { display: none !important; }
+  dialog.report-dialog #reportSignActions.mode-signed-incomplete #signatureStatus { display: block !important; width: 100% !important; }
+  dialog.report-dialog #reportSignActions.mode-signed-incomplete .incomplete-justification-display { margin: 0 !important; }
+}
+
 /* Rodape compacto: reducao de 15% no volume das duas acoes. */
 @media (max-width:680px) {
   dialog.report-dialog #signatureStatus .sign-incomplete-button,
