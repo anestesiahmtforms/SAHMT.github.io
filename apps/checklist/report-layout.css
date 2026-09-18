@@ -438,6 +438,95 @@ dialog.report-dialog {
   }
 }
 
+/* Estados deterministas do bloco de assinatura; evita combinacoes de hidden/order. */
+@media (max-width:680px) {
+  dialog.report-dialog #reportSignActions.mode-ready {
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) !important;
+    align-items: end !important;
+    gap: 8px !important;
+    min-height: 41px !important;
+  }
+  dialog.report-dialog #reportSignActions.mode-ready #signatureStatus,
+  dialog.report-dialog #reportSignActions.mode-ready #signForm {
+    display: flex !important;
+    min-width: 0 !important;
+    min-height: 41px !important;
+  }
+  dialog.report-dialog #reportSignActions.mode-ready #signatureStatus .signature-status-wrap {
+    display: flex !important;
+    width: 100% !important;
+    min-height: 41px !important;
+    align-items: stretch !important;
+  }
+  dialog.report-dialog #reportSignActions.mode-ready #signForm {
+    flex-direction: column !important;
+  }
+  dialog.report-dialog #reportSignActions.mode-ready #signForm[hidden] {
+    display: none !important;
+  }
+  dialog.report-dialog #reportSignActions.mode-ready .sign-incomplete-button,
+  dialog.report-dialog #reportSignActions.mode-ready #sign {
+    display: block !important;
+    width: 100% !important;
+    min-height: 41px !important;
+    margin: 0 !important;
+  }
+  dialog.report-dialog #reportSignActions.mode-signed-complete,
+  dialog.report-dialog #reportSignActions.mode-signed-incomplete,
+  dialog.report-dialog #reportSignActions.mode-history,
+  dialog.report-dialog #reportSignActions.mode-stale,
+  dialog.report-dialog #reportSignActions.mode-locked {
+    display: block !important;
+    width: 100% !important;
+    min-height: 0 !important;
+  }
+  dialog.report-dialog #reportSignActions.mode-signed-complete #signatureStatus,
+  dialog.report-dialog #reportSignActions.mode-signed-incomplete #signatureStatus,
+  dialog.report-dialog #reportSignActions.mode-history #signatureStatus,
+  dialog.report-dialog #reportSignActions.mode-stale #signatureStatus,
+  dialog.report-dialog #reportSignActions.mode-locked #signatureStatus {
+    display: block !important;
+    width: 100% !important;
+    min-height: 0 !important;
+    margin: 0 !important;
+  }
+  dialog.report-dialog #reportSignActions.mode-signed-complete #signForm,
+  dialog.report-dialog #reportSignActions.mode-signed-incomplete #signForm,
+  dialog.report-dialog #reportSignActions.mode-history #signForm,
+  dialog.report-dialog #reportSignActions.mode-stale #signForm,
+  dialog.report-dialog #reportSignActions.mode-locked #signForm {
+    display: none !important;
+  }
+  dialog.report-dialog #reportSignActions.mode-signed-complete .signature-status-wrap,
+  dialog.report-dialog #reportSignActions.mode-history .signature-status-wrap,
+  dialog.report-dialog #reportSignActions.mode-stale .signature-status-wrap,
+  dialog.report-dialog #reportSignActions.mode-locked .signature-status-wrap {
+    display: block !important;
+    width: 100% !important;
+  }
+  dialog.report-dialog #reportSignActions.mode-signed-complete .signature-status-wrap > p,
+  dialog.report-dialog #reportSignActions.mode-history .signature-status-wrap > p,
+  dialog.report-dialog #reportSignActions.mode-stale .signature-status-wrap > p,
+  dialog.report-dialog #reportSignActions.mode-locked .signature-status-wrap > p {
+    display: block !important;
+    width: 100% !important;
+    margin: 0 !important;
+  }
+  dialog.report-dialog #reportSignActions.mode-signed-incomplete .signature-status-wrap {
+    display: block !important;
+    width: 100% !important;
+  }
+  dialog.report-dialog #reportSignActions.mode-signed-incomplete .incomplete-justification-display {
+    display: block !important;
+    width: 100% !important;
+    min-height: 72px !important;
+    max-height: 22dvh !important;
+    overflow: hidden !important;
+    box-sizing: border-box !important;
+  }
+}
+
 /* Rodape compacto: reducao de 15% no volume das duas acoes. */
 @media (max-width:680px) {
   dialog.report-dialog #signatureStatus .sign-incomplete-button,
