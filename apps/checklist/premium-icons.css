@@ -228,3 +228,32 @@
   dialog.report-dialog .equipment-grid { row-gap: 6px !important; }
   dialog.report-dialog .arsenal-icon { min-height: 41px !important; padding-block: 5px !important; border-radius: 15px !important; }
 }
+
+/* Reducao real de 20% no bloco dos arsenais para reservar o rodape. */
+@media (max-width:680px) {
+  dialog.report-dialog .equipment-grid {
+    flex: 0 1 52dvh !important;
+    height: 52dvh !important;
+    max-height: 52dvh !important;
+    min-height: 0 !important;
+    grid-template-rows: repeat(5, minmax(36px, 1fr)) !important;
+    row-gap: 7px !important;
+    padding-block: 6px 8px !important;
+    margin-block: 3px 5px !important;
+  }
+  dialog.report-dialog .arsenal-icon {
+    min-height: 36px !important;
+    padding-block: 5px !important;
+    border-radius: 16px !important;
+  }
+}
+@media (max-width:380px) {
+  dialog.report-dialog .equipment-grid {
+    flex-basis: 48dvh !important;
+    height: 48dvh !important;
+    max-height: 48dvh !important;
+    row-gap: 5px !important;
+    padding-block: 5px 6px !important;
+  }
+  dialog.report-dialog .arsenal-icon { min-height: 33px !important; padding-block: 4px !important; border-radius: 14px !important; }
+}
