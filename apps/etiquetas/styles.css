@@ -6474,3 +6474,8 @@ body::before {
     min-height: 50px !important;
   }
 }
+
+/* Modais responsivos: 95% do display, com margem segura para smartphones. */
+@media (max-width: 680px) {
+  .modal-panel, #confirm-overlay .confirm-card, #edit-overlay .edit-card { inset: max(2.5dvh, env(safe-area-inset-top, 0px)) max(2.5vw, env(safe-area-inset-right, 0px)) max(2.5dvh, env(safe-area-inset-bottom, 0px)) max(2.5vw, env(safe-area-inset-left, 0px)) !important; width: auto !important; max-width: none !important; height: auto !important; max-height: none !important; }
+}

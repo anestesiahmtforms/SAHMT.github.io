@@ -337,4 +337,4 @@ dialog{width:min(94%,560px);max-height:90dvh;overflow:auto;border:1px solid #fff
 
 /* "Ler QR Code" e apenas legenda; a imagem permanece como alvo de leitura. */
 .scan-label { display: block; margin: 1px auto 0; color: var(--ink); font-size: clamp(.72rem, 3vw, .9rem); font-weight: 900; letter-spacing: .04em; line-height: 1.1; pointer-events: none; }
-@media (max-width:680px){dialog{width:98vw;max-width:98vw;height:98dvh;max-height:98dvh;margin:auto;padding:clamp(12px,3vw,24px)}}
+@media (max-width:680px){dialog{width:95vw;max-width:95vw;height:95dvh;max-height:95dvh;margin:auto;padding:clamp(12px,3vw,24px)}}

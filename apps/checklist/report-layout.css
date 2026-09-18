@@ -1,4 +1,4 @@
-dialog.report-dialog:not([open]){display:none!important}.report-dialog{position:fixed;inset:1vh 1vw;width:98vw;height:98dvh;max-width:none;max-height:none;margin:0;overflow:hidden;display:flex;flex-direction:column;padding:18px}.report-title{justify-content:center;margin-bottom:10px}.report-title h2{text-align:center;width:100%;margin:0}.date-choice{display:block;text-align:center;font-weight:850;letter-spacing:1.5px;font-size:12px}.date-row{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;margin:4px auto 10px}.date-choice input{position:relative;flex:1 1 220px;min-width:0;width:auto;margin:0;max-width:220px;text-align:center}.date-choice input::-webkit-calendar-picker-indicator{opacity:.8;position:static;width:auto;height:auto;cursor:pointer}.date-arrow{display:inline-flex;flex:0 0 34px;align-items:center;justify-content:center;width:34px;height:34px;padding:0;border:0;border-radius:10px;background:#e7f1fb;color:#1668ad;font-size:27px;font-weight:900;line-height:1;box-shadow:0 3px 8px #1668ad2b;cursor:pointer;touch-action:manipulation}.date-arrow:active{transform:scale(.92)}.report-sync-status{display:inline-flex;flex:0 1 105px;align-items:center;justify-content:flex-start;gap:5px;min-width:78px;color:#b51f2b;font-size:10px;font-weight:800;letter-spacing:.1px;text-align:left;white-space:nowrap}.report-sync-dot{width:8px;height:8px;flex:0 0 8px;border-radius:50%;background:#b51f2b;box-shadow:0 0 0 3px #f5c7ca}.report-sync-status[data-state=syncing]{animation:report-sync-pulse 850ms ease-in-out infinite}.report-sync-status[data-state=updated]{color:#16803d}.report-sync-status[data-state=updated] .report-sync-dot{background:#16803d;box-shadow:0 0 0 3px #c5e6cf}.report-sync-status[data-state=error]{color:#b51f2b}.report-sync-status[data-state=error] .report-sync-dot{background:#b51f2b;box-shadow:0 0 0 3px #f5c7ca}@keyframes report-sync-pulse{0%,100%{opacity:.5}50%{opacity:1}}.report-dialog .equipment-grid{flex:1 1 auto;overflow:visible;min-height:0;align-content:start;padding:4px 3px}.responsible-compact{padding:4px 8px;font-size:12px;margin-top:3px;text-align:center}.responsible-compact strong,.responsible-compact p{display:block;text-align:center}.responsible-compact p{margin:3px 0}.report-dialog #signatureStatus{font-size:12px;text-align:center;margin:3px 0}.report-dialog #signatureStatus .signature{padding:5px 8px;margin:0;text-align:center}.report-dialog .declaration{margin:6px 0;font-size:11px}.report-dialog .primary{min-height:44px;padding:9px}.report-dialog .soft{min-height:42px;margin-top:8px;padding:9px}@media(max-width:430px){.date-row{gap:5px}.date-choice input{padding:8px 4px;font-size:12px}.date-sync-status{font-size:9px}.report-sync-status{flex-basis:88px;min-width:72px;font-size:9px}.date-arrow{flex-basis:32px;width:32px;height:32px;font-size:25px}}
+dialog.report-dialog:not([open]){display:none!important}.report-dialog{position:fixed;inset:2.5vh 2.5vw;width:95vw;height:95dvh;max-width:none;max-height:none;margin:0;overflow:hidden;display:flex;flex-direction:column;padding:18px}.report-title{justify-content:center;margin-bottom:10px}.report-title h2{text-align:center;width:100%;margin:0}.date-choice{display:block;text-align:center;font-weight:850;letter-spacing:1.5px;font-size:12px}.date-row{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;margin:4px auto 10px}.date-choice input{position:relative;flex:1 1 220px;min-width:0;width:auto;margin:0;max-width:220px;text-align:center}.date-choice input::-webkit-calendar-picker-indicator{opacity:.8;position:static;width:auto;height:auto;cursor:pointer}.date-arrow{display:inline-flex;flex:0 0 34px;align-items:center;justify-content:center;width:34px;height:34px;padding:0;border:0;border-radius:10px;background:#e7f1fb;color:#1668ad;font-size:27px;font-weight:900;line-height:1;box-shadow:0 3px 8px #1668ad2b;cursor:pointer;touch-action:manipulation}.date-arrow:active{transform:scale(.92)}.report-sync-status{display:inline-flex;flex:0 1 105px;align-items:center;justify-content:flex-start;gap:5px;min-width:78px;color:#b51f2b;font-size:10px;font-weight:800;letter-spacing:.1px;text-align:left;white-space:nowrap}.report-sync-dot{width:8px;height:8px;flex:0 0 8px;border-radius:50%;background:#b51f2b;box-shadow:0 0 0 3px #f5c7ca}.report-sync-status[data-state=syncing]{animation:report-sync-pulse 850ms ease-in-out infinite}.report-sync-status[data-state=updated]{color:#16803d}.report-sync-status[data-state=updated] .report-sync-dot{background:#16803d;box-shadow:0 0 0 3px #c5e6cf}.report-sync-status[data-state=error]{color:#b51f2b}.report-sync-status[data-state=error] .report-sync-dot{background:#b51f2b;box-shadow:0 0 0 3px #f5c7ca}@keyframes report-sync-pulse{0%,100%{opacity:.5}50%{opacity:1}}.report-dialog .equipment-grid{flex:1 1 auto;overflow:visible;min-height:0;align-content:start;padding:4px 3px}.responsible-compact{padding:4px 8px;font-size:12px;margin-top:3px;text-align:center}.responsible-compact strong,.responsible-compact p{display:block;text-align:center}.responsible-compact p{margin:3px 0}.report-dialog #signatureStatus{font-size:12px;text-align:center;margin:3px 0}.report-dialog #signatureStatus .signature{padding:5px 8px;margin:0;text-align:center}.report-dialog .declaration{margin:6px 0;font-size:11px}.report-dialog .primary{min-height:44px;padding:9px}.report-dialog .soft{min-height:42px;margin-top:8px;padding:9px}@media(max-width:430px){.date-row{gap:5px}.date-choice input{padding:8px 4px;font-size:12px}.date-sync-status{font-size:9px}.report-sync-status{flex-basis:88px;min-width:72px;font-size:9px}.date-arrow{flex-basis:32px;width:32px;height:32px;font-size:25px}}
 .monthly-day{grid-template-columns:minmax(66px,.22fr) minmax(0,1fr) minmax(130px,.85fr) auto}
 .monthly-people{min-width:0;text-align:center}
 .monthly-person{min-width:0}
@@ -129,11 +129,11 @@ body {
 
 dialog.report-dialog {
   position: fixed;
-  inset: 1vh 1vw;
-  width: 98vw;
-  height: calc(100svh - 2vh);
-  min-height: calc(100svh - 2vh);
-  max-height: calc(100svh - 2vh);
+  inset: 2.5vh 2.5vw;
+  width: 95vw;
+  height: 95svh;
+  min-height: 95svh;
+  max-height: 95svh;
   box-sizing: border-box;
   transform: none !important;
   zoom: 1 !important;
@@ -168,11 +168,11 @@ dialog.report-dialog {
 
 @media (max-width: 430px) {
   dialog.report-dialog {
-    inset: 1vh 1vw;
-    width: 98vw;
-    height: calc(100svh - 2vh);
-    min-height: calc(100svh - 2vh);
-    max-height: calc(100svh - 2vh);
+    inset: 2.5vh 2.5vw;
+    width: 95vw;
+    height: 95svh;
+    min-height: 95svh;
+    max-height: 95svh;
   }
 }
 

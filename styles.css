@@ -2128,7 +2128,7 @@ button:hover,
 .module-link-strip span,.module-link-card span { position:relative; z-index:1; padding:4px 8px; border:1px solid rgba(255,255,255,.86); border-radius:999px; background:rgba(255,255,255,.78); color:#12324f; font-size:clamp(.55rem,1.7vw,.68rem); line-height:1.05; letter-spacing:.02em; box-shadow:inset 0 1px 1px rgba(255,255,255,.9),0 2px 4px rgba(21,61,82,.1); }
 @media(max-width:380px){.module-link-strip{gap:8px}.module-link-strip a,.module-link-card{min-height:82px;padding:7px 4px 9px;border-radius:22px}.module-link-strip a::after,.module-link-card::after{inset:4px;border-radius:18px}.module-link-strip img,.module-link-card__image{width:52px;height:48px}.module-link-strip span,.module-link-card span{padding:3px 5px;font-size:.52rem}}
 @media (max-width: 680px) {
-  .contact-sheet, .events-sheet, .notice-card { width: 98vw; max-width: 98vw; height: 98dvh; max-height: 98dvh; }
-  .events-sheet { inset: 1dvh 1vw; width: auto; min-height: 0; }
+  .contact-sheet, .events-sheet, .notice-card { width: 95vw; max-width: 95vw; height: 95dvh; max-height: 95dvh; }
+  .events-sheet { inset: 2.5dvh 2.5vw; width: auto; min-height: 0; }
   .contact-sheet, .notice-card { margin: auto; }
 }

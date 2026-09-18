@@ -1,3 +1,3 @@
 @media (max-width:680px){
-  dialog{width:98vw;max-width:98vw;height:98dvh;max-height:98dvh;margin:auto;padding:clamp(12px,3vw,24px)}
+  dialog{width:95vw;max-width:95vw;height:95dvh;max-height:95dvh;margin:auto;padding:clamp(12px,3vw,24px)}
 }
