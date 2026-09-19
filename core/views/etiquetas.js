@@ -2098,6 +2098,8 @@ function renderEditRecordFields() {
       </label>
     </div>
   `;
+  editOverlayEl?.classList.add("has-edit-fields");
+  editSummaryEl.classList.add("has-edit-fields");
   bindEditConditionalFields();
 }
 
@@ -2226,7 +2228,9 @@ function closeEditRecord() {
   state.editingRow = null;
   if (editOverlayEl) {
     editOverlayEl.hidden = true;
+    editOverlayEl.classList.remove("has-edit-fields");
   }
+  editSummaryEl?.classList.remove("has-edit-fields");
   setEditFeedback("", "neutral");
 }
 

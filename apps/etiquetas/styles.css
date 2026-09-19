@@ -6485,3 +6485,48 @@ body::before {
   .modal-panel>* ,.confirm-card>*{min-width:0!important;max-width:100%!important;box-sizing:border-box!important}
   .modal-panel .modal-body,.modal-panel .records-list,.modal-panel .monthly-report-panel{min-height:0!important;max-height:100%!important;overflow:hidden!important}
 }
+
+/* Edição de Etiquetas: impedir que a grade de campos colapse entre o contexto e o rodapé. */
+#edit-overlay.has-edit-fields .edit-card {
+  display: flex !important;
+  flex-direction: column !important;
+  min-height: min(95dvh, 760px) !important;
+  height: min(95dvh, 900px) !important;
+  max-height: 95dvh !important;
+  overflow: hidden !important;
+}
+
+#edit-overlay.has-edit-fields #edit-summary {
+  display: block !important;
+  visibility: visible !important;
+  flex: 1 1 auto !important;
+  min-height: 260px !important;
+  height: auto !important;
+  overflow-y: auto !important;
+  overflow-x: hidden !important;
+}
+
+#edit-overlay.has-edit-fields #edit-summary .confirm-edit-grid {
+  display: grid !important;
+  visibility: visible !important;
+  min-height: 240px !important;
+  height: auto !important;
+  align-content: start !important;
+}
+
+#edit-overlay.has-edit-fields #edit-summary .confirm-edit-grid > label {
+  display: grid !important;
+  visibility: visible !important;
+  min-height: 42px !important;
+}
+
+@media (max-width: 680px) {
+  #edit-overlay.has-edit-fields .edit-card {
+    min-height: 95dvh !important;
+    height: 95dvh !important;
+  }
+
+  #edit-overlay.has-edit-fields #edit-summary {
+    min-height: 230px !important;
+  }
+}
