@@ -699,3 +699,69 @@ dialog.report-dialog {
     overflow-wrap: anywhere !important;
   }
 }
+
+/* Assinatura premium: duas acoes expressivas e separadas no rodape. */
+@media (max-width:680px) {
+  dialog.report-dialog #reportSignActions.mode-ready {
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: 9px !important;
+    width: 100% !important;
+    margin: 6px 0 2px !important;
+  }
+
+  dialog.report-dialog #reportSignActions.mode-ready #signForm,
+  dialog.report-dialog #reportSignActions.mode-ready #signatureStatus {
+    width: 100% !important;
+    min-height: 58px !important;
+    flex: 0 0 auto !important;
+  }
+
+  dialog.report-dialog #reportSignActions.mode-ready #sign,
+  dialog.report-dialog #reportSignActions.mode-ready .sign-incomplete-button {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    width: 100% !important;
+    min-height: 58px !important;
+    margin: 0 !important;
+    padding: 12px 14px !important;
+    border: 2px solid rgba(255,255,255,.92) !important;
+    border-radius: 18px !important;
+    font-size: .78rem !important;
+    font-weight: 950 !important;
+    line-height: 1.15 !important;
+    letter-spacing: .02em !important;
+    white-space: normal !important;
+    box-sizing: border-box !important;
+    transform: none !important;
+  }
+
+  dialog.report-dialog #reportSignActions.mode-ready #sign {
+    background: linear-gradient(145deg,#2f91d2 0%,#1762a1 52%,#0d3257 100%) !important;
+    color: #fff !important;
+    box-shadow: 0 5px 0 #082b4a, 0 12px 20px rgba(13,50,87,.28), inset 0 2px 0 rgba(255,255,255,.48) !important;
+  }
+
+  dialog.report-dialog #reportSignActions.mode-ready .sign-incomplete-button {
+    background: linear-gradient(145deg,#fff2b8 0%,#e5b735 54%,#ad7410 100%) !important;
+    color: #4f3600 !important;
+    box-shadow: 0 5px 0 #8b5d08, 0 11px 18px rgba(139,93,8,.22), inset 0 2px 0 rgba(255,255,255,.7) !important;
+  }
+
+  dialog.report-dialog #reportSignActions.mode-ready #sign:not(:disabled):active,
+  dialog.report-dialog #reportSignActions.mode-ready .sign-incomplete-button:not(:disabled):active {
+    transform: translateY(3px) scale(.99) !important;
+  }
+}
+
+@media (min-width:681px) {
+  dialog.report-dialog #reportSignActions.mode-ready #sign,
+  dialog.report-dialog #reportSignActions.mode-ready .sign-incomplete-button {
+    min-height: 54px;
+    padding: 12px 16px;
+    border-radius: 16px;
+    font-weight: 950;
+  }
+}
