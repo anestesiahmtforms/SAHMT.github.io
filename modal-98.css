@@ -13,3 +13,21 @@
 #update-dialog h2{margin:0 0 10px!important;text-align:center!important}
 #update-dialog p{margin:0 0 12px!important;line-height:1.4!important;text-align:center!important}
 #update-dialog button{min-height:42px!important;width:100%!important;margin:4px 0!important;text-align:center!important}
+
+/* Regra final: o aviso de atualização é um cartão independente, nunca um
+   modal quase em tela cheia. O top/left ficam depois do inset para impedir
+   que a regra geral de dialog o empurre para a lateral. */
+#update-dialog {
+  inset: auto !important;
+  top: 50% !important;
+  left: 50% !important;
+  right: auto !important;
+  bottom: auto !important;
+  width: min(88vw, 390px) !important;
+  height: auto !important;
+  max-width: 390px !important;
+  max-height: min(78dvh, 520px) !important;
+  margin: 0 !important;
+  transform: translate(-50%, -50%) !important;
+  overflow: hidden !important;
+}
