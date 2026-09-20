@@ -6794,3 +6794,11 @@ body::before {
 #edit-overlay.edit-overlay #edit-summary .confirm-edit-grid>label:has(input:disabled),
 #edit-overlay.edit-overlay #edit-summary .confirm-edit-grid>label:has(select:disabled){background:rgba(248,190,190,.42)!important;border-color:rgba(173,45,45,.28)!important;opacity:1!important;filter:none!important}
 #edit-overlay.edit-overlay .edit-card{overflow:hidden!important}
+
+/* Área de siglas mais confortável para toque, usando o espaço livre inferior. */
+#edit-overlay.edit-overlay #edit-summary .edit-plantonistas-grid{grid-template-columns:repeat(5,minmax(0,1fr))!important;grid-auto-rows:28px!important;gap:4px!important;padding:4px!important}
+#edit-overlay.edit-overlay #edit-summary .edit-plantonistas-grid label{min-height:28px!important;height:28px!important;padding:4px 2px!important;font-size:.62rem!important;line-height:1.05!important;text-align:center!important;justify-content:center!important}
+#edit-overlay.edit-overlay #edit-summary .confirm-edit-grid>label:has(#edit-observacoes){min-height:56px!important}
+#edit-overlay.edit-overlay #edit-summary .confirm-edit-grid #edit-observacoes{height:56px!important;min-height:56px!important}
+#edit-overlay.edit-overlay #edit-save,
+#edit-overlay.edit-overlay .panel-home-button{display:flex!important;align-items:center!important;justify-content:center!important;text-align:center!important}
