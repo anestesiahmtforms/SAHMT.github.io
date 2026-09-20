@@ -6775,3 +6775,22 @@ body::before {
 #edit-overlay.edit-overlay #edit-summary .confirm-edit-grid input:disabled,
 #edit-overlay.edit-overlay #edit-summary .confirm-edit-grid select:disabled,
 #edit-overlay.edit-overlay #edit-summary .confirm-edit-grid textarea:disabled{cursor:not-allowed!important;background:rgba(203,213,225,.48)!important;color:rgba(20,50,84,.55)!important}
+
+/* Fechamento do layout: a grade das 31 siglas ocupa toda a linha e nunca
+   fica atrás do rodapé ou de outra estrutura do modal. */
+#edit-overlay.edit-overlay .edit-card>#edit-summary{overflow:visible!important;flex:0 0 auto!important}
+#edit-overlay.edit-overlay #edit-summary .confirm-edit-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:4px!important}
+#edit-overlay.edit-overlay #edit-summary .confirm-edit-grid>label{min-height:0!important;padding:3px 5px!important;gap:1px!important}
+#edit-overlay.edit-overlay #edit-summary .confirm-edit-grid>label>span{font-size:.56rem!important;line-height:1!important}
+#edit-overlay.edit-overlay #edit-summary .confirm-edit-grid input,
+#edit-overlay.edit-overlay #edit-summary .confirm-edit-grid select{min-height:28px!important;height:28px!important;padding:3px 5px!important}
+#edit-overlay.edit-overlay #edit-summary .confirm-edit-grid textarea{min-height:34px!important;height:34px!important;padding:3px 5px!important}
+#edit-overlay.edit-overlay #edit-summary .edit-plantonistas-field{display:grid!important;grid-template-rows:auto auto!important}
+#edit-overlay.edit-overlay #edit-summary .edit-plantonistas-grid{grid-template-columns:repeat(6,minmax(0,1fr))!important;grid-auto-rows:minmax(19px,auto)!important;gap:2px!important;max-height:none!important;height:auto!important;min-height:0!important;overflow:visible!important;padding:3px!important}
+#edit-overlay.edit-overlay #edit-summary .edit-plantonistas-grid label{display:flex!important;align-items:center!important;justify-content:center!important;min-height:19px!important;height:19px!important;padding:1px!important;font-size:.52rem!important;line-height:1!important;white-space:nowrap!important;overflow:visible!important}
+#edit-overlay.edit-overlay #edit-summary .edit-plantonistas-grid label:has(input:not(:disabled)){background:rgba(183,230,197,.78)!important;border-color:rgba(37,125,70,.42)!important;color:#14532d!important;box-shadow:inset 0 1px 0 rgba(255,255,255,.8),0 2px 4px rgba(37,125,70,.08)!important}
+#edit-overlay.edit-overlay #edit-summary .edit-plantonistas-grid label:has(input:disabled){background:rgba(248,190,190,.72)!important;border-color:rgba(173,45,45,.35)!important;color:#7f1d1d!important;opacity:1!important;filter:none!important}
+#edit-overlay.edit-overlay #edit-summary .confirm-edit-grid>label:not(:has(input:disabled)):not(:has(select:disabled)){background:rgba(183,230,197,.46)!important;border-color:rgba(37,125,70,.28)!important}
+#edit-overlay.edit-overlay #edit-summary .confirm-edit-grid>label:has(input:disabled),
+#edit-overlay.edit-overlay #edit-summary .confirm-edit-grid>label:has(select:disabled){background:rgba(248,190,190,.42)!important;border-color:rgba(173,45,45,.28)!important;opacity:1!important;filter:none!important}
+#edit-overlay.edit-overlay .edit-card{overflow:hidden!important}
