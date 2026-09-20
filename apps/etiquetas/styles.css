@@ -6575,3 +6575,140 @@ body::before {
   #edit-overlay.has-edit-fields #edit-summary .edit-plantonistas-grid { height: 46px !important; max-height: 46px !important; padding: 2px !important; gap: 2px !important; }
   #edit-overlay.has-edit-fields .edit-plantonistas-grid label { min-height: 14px !important; height: 14px !important; padding: 0 !important; font-size: .55rem !important; }
 }
+
+/* Correção final: editor de Etiquetas alinhado ao editor de Eventos. */
+#edit-overlay.has-edit-fields .edit-card {
+  display: flex !important;
+  flex-direction: column !important;
+  overflow: hidden !important;
+}
+#edit-overlay.has-edit-fields #edit-summary .confirm-edit-grid > label[hidden] {
+  display: none !important;
+}
+#edit-overlay.has-edit-fields #edit-summary {
+  flex: 1 1 auto !important;
+  min-height: 0 !important;
+  overflow: visible !important;
+}
+#edit-overlay.has-edit-fields #edit-summary .confirm-edit-grid {
+  display: grid !important;
+  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  align-content: start !important;
+  gap: 8px !important;
+  width: 100% !important;
+}
+#edit-overlay.has-edit-fields #edit-summary .confirm-edit-grid > label {
+  display: grid !important;
+  grid-column: span 1;
+  grid-template-rows: auto minmax(0, 1fr);
+  align-content: stretch;
+  min-width: 0 !important;
+  min-height: 48px !important;
+  height: auto !important;
+  padding: 6px !important;
+  gap: 4px !important;
+  overflow: hidden !important;
+}
+#edit-overlay.has-edit-fields #edit-summary .confirm-edit-grid > label.full-width,
+#edit-overlay.has-edit-fields #edit-summary .confirm-edit-grid > label:has(textarea),
+#edit-overlay.has-edit-fields #edit-summary .confirm-edit-grid > .edit-plantonistas-field {
+  grid-column: 1 / -1 !important;
+}
+#edit-overlay.has-edit-fields #edit-summary .confirm-edit-grid > #edit-valor-field,
+#edit-overlay.has-edit-fields #edit-summary .confirm-edit-grid > #edit-convenio-field {
+  order: initial !important;
+  grid-column: span 1 !important;
+}
+#edit-overlay.has-edit-fields #edit-summary .confirm-edit-grid input,
+#edit-overlay.has-edit-fields #edit-summary .confirm-edit-grid select,
+#edit-overlay.has-edit-fields #edit-summary .confirm-edit-grid textarea {
+  width: 100% !important;
+  min-width: 0 !important;
+  min-height: 29px !important;
+  height: 29px !important;
+  box-sizing: border-box !important;
+  font-size: 0.76rem !important;
+  line-height: 1.1 !important;
+}
+#edit-overlay.has-edit-fields #edit-summary .confirm-edit-grid textarea {
+  height: 40px !important;
+  resize: none !important;
+}
+#edit-overlay.has-edit-fields #edit-summary .edit-plantonistas-grid {
+  display: grid !important;
+  grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+  align-content: start !important;
+  gap: 4px !important;
+  min-height: 38px !important;
+  max-height: 48px !important;
+  overflow: hidden !important;
+}
+#edit-overlay.has-edit-fields #edit-summary .edit-plantonistas-grid label {
+  min-width: 0 !important;
+  min-height: 20px !important;
+  height: 20px !important;
+  padding: 2px 3px !important;
+  overflow: hidden !important;
+  white-space: nowrap !important;
+  text-overflow: ellipsis !important;
+}
+@media (max-width: 680px) {
+  #edit-overlay.has-edit-fields #edit-summary .confirm-edit-grid {
+    gap: 4px !important;
+  }
+  #edit-overlay.has-edit-fields #edit-summary .confirm-edit-grid > label {
+    min-height: 40px !important;
+    height: 40px !important;
+    padding: 3px !important;
+    gap: 2px !important;
+  }
+  #edit-overlay.has-edit-fields #edit-summary .confirm-edit-grid > label:has(textarea) {
+    min-height: 44px !important;
+    height: 44px !important;
+  }
+  #edit-overlay.has-edit-fields #edit-summary .confirm-edit-grid > .edit-plantonistas-field {
+    min-height: 52px !important;
+    height: 52px !important;
+  }
+  #edit-overlay.has-edit-fields #edit-summary .confirm-edit-grid input,
+  #edit-overlay.has-edit-fields #edit-summary .confirm-edit-grid select,
+  #edit-overlay.has-edit-fields #edit-summary .confirm-edit-grid textarea {
+    min-height: 24px !important;
+    height: 24px !important;
+    padding: 1px 4px !important;
+    font-size: 0.7rem !important;
+  }
+  #edit-overlay.has-edit-fields #edit-summary .confirm-edit-grid textarea {
+    height: 28px !important;
+  }
+  #edit-overlay.has-edit-fields #edit-summary .edit-plantonistas-grid {
+    min-height: 30px !important;
+    max-height: 34px !important;
+    gap: 2px !important;
+  }
+  #edit-overlay.has-edit-fields #edit-summary .edit-plantonistas-grid label {
+    min-height: 14px !important;
+    height: 14px !important;
+    font-size: 0.5rem !important;
+  }
+}
+#monthly-panel.is-open {
+  display: flex !important;
+  flex-direction: column !important;
+  min-height: 0 !important;
+  overflow: hidden !important;
+}
+#monthly-panel.is-open .monthly-report-panel {
+  display: flex !important;
+  flex: 1 1 auto !important;
+  flex-direction: column !important;
+  min-height: 0 !important;
+  overflow: hidden !important;
+}
+#monthly-panel.is-open .monthly-list {
+  flex: 1 1 auto !important;
+  min-height: 0 !important;
+  overflow-y: auto !important;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+}

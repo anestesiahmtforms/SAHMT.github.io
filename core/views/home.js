@@ -1483,18 +1483,11 @@ const {Services,localStorage,sessionStorage,document,window,navigator,location,h
       day: "2-digit",
       month: "2-digit",
       year: "numeric"
-    }).format(new Date(`${dateKey}T12:00:00`));
+    }).format(new Date(`${dateKey}T12:00:00`)).replaceAll("/", "-");
   }
 
   function formatLong(dateKey) {
-    const value = new Intl.DateTimeFormat("pt-BR", {
-      weekday: "long",
-      day: "2-digit",
-      month: "long",
-      year: "numeric"
-    }).format(new Date(`${dateKey}T12:00:00`));
-
-    return value.charAt(0).toUpperCase() + value.slice(1);
+    return formatShort(dateKey);
   }
 
   function getWeekdayLabel(dateKey) {

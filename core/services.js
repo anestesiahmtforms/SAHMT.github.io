@@ -1,5 +1,6 @@
 import {safePayload} from './outbox.js';
-const br=iso=>String(iso||'').slice(0,10).split('-').reverse().join('/');
+const br=iso=>{const text=String(iso||'').trim();const match=text.match(/^(\d{4})-(\d{2})-(\d{2})/);return match?`${match[3]}-${match[2]}-${match[1]}`:text;};
+const dateTimeDisplay=value=>{const text=String(value||'').trim();if(!text)return '';const parsed=new Date(text);if(Number.isNaN(parsed.getTime()))return text;return new Intl.DateTimeFormat('pt-BR',{timeZone:'America/Sao_Paulo',day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit',hour12:false}).format(parsed).replace(',', '').replaceAll('/','-');};
 const iso=value=>/^\d{2}\/\d{2}\/\d{4}$/.test(value)?value.split('/').reverse().join('-'):value;
 export class Services {
  constructor({api,session,store,outbox}){Object.assign(this,{api,session,store,outbox});this.operations=new Map();this.uiMemory=new Map();this.bootstrapData=null;}
@@ -37,7 +38,7 @@ export class Services {
 const LABEL_EDIT_FIELD_NAMES=Object.freeze({data:'Data',nomePaciente:'Nome do Paciente',convenio:'Convenio',cirurgia:'Cirurgia',atendimento:'Atendimento',tipo:'Tipo',credor:'Credor',plantonistas:'Plantonista(s)',observacoes:'Observacoes',valor:'Valor',duplicateJustification:'Justificativa'});
 function formatLabelEditHistoryLine(entry){
  const edit=entry&&typeof entry==='object'?entry:{};
- const at=String(edit.at||'').trim()||'Sem data registrada';
+ const at=dateTimeDisplay(edit.at)||'Sem data registrada';
  const by=String(edit.by||'').trim()||'Sem responsavel registrado';
  const fields=Array.isArray(edit.fields)?edit.fields:[];
  const changes=fields.map((field)=>{
@@ -55,7 +56,7 @@ function formatLabelEditHistoryLine(entry){
 const EVENT_EDIT_FIELD_NAMES=Object.freeze({data:'Data do Evento',membro:'Membro',tipoEvento:'Tipo de Evento',descricao:'Descricao do evento',multiploAtraso:'Multiplo do atraso',substituto:'Substituto',turno:'Turno',pagador:'Pagador',credor:'Credor',valor:'Valor a pagar',source:'Origem'});
 function formatEventEditHistoryLine(entry){
  const edit=entry&&typeof entry==='object'?entry:{};
- const data=String(edit.at||'').trim()||'Data nao registrada';
+ const data=dateTimeDisplay(edit.at)||'Data nao registrada';
  const responsible=String(edit.by||'').trim()||'Responsavel nao informado';
  const fields=Array.isArray(edit.fields)?edit.fields:[];
  const changes=fields.map((field)=>{

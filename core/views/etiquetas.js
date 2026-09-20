@@ -26,6 +26,8 @@ const state = {
   summaryMode: "date",
   monthlyRows: [],
   monthlyMonth: "",
+  monthlyLoadPromise: null,
+  monthlyLoadMonth: "",
   editingRow: null,
   auth: null,
   authenticated: false,
@@ -1020,10 +1022,8 @@ function openMonthlyReportPanel() {
   monthlyPanelEl.hidden = false;
   monthlyPanelEl.classList.add("is-open");
   monthlyReportButtonEl?.setAttribute("aria-expanded", "true");
-  if (!reportMonthEl.value) {
-    reportMonthEl.value = getTodayISO().slice(0, 7);
-    loadMonthlySummary({ silent: true });
-  }
+  if (!reportMonthEl.value) reportMonthEl.value = getTodayISO().slice(0, 7);
+  loadMonthlySummary({ silent: true });
   syncModalLock();
 }
 
@@ -1672,6 +1672,24 @@ function resetSummaryToToday() {
 }
 
 async function loadMonthlySummary(options = {}) {
+  const requestedMonth = reportMonthEl?.value || "";
+  if (state.monthlyLoadPromise && state.monthlyLoadMonth === requestedMonth) {
+    return state.monthlyLoadPromise;
+  }
+  state.monthlyLoadMonth = requestedMonth;
+  const promise = loadMonthlySummaryInternal(options);
+  state.monthlyLoadPromise = promise;
+  try {
+    return await promise;
+  } finally {
+    if (state.monthlyLoadPromise === promise) {
+      state.monthlyLoadPromise = null;
+      state.monthlyLoadMonth = "";
+    }
+  }
+}
+
+async function loadMonthlySummaryInternal(options = {}) {
   if (!state.config.scriptUrl) {
     state.monthlyRows = [];
     state.monthlyMonth = "";
@@ -1689,6 +1707,7 @@ async function loadMonthlySummary(options = {}) {
     return;
   }
 
+  renderMonthlyStatus("Atualizando relatório mensal...", "neutral");
   try {
     state.monthlyRows = (await loadMonthlyEntries(month)).sort(compareEtiquetaRecordsAsc);
     state.monthlyMonth = month;
@@ -1940,10 +1959,10 @@ function renderHistoryLine(label, value) {
 function formatHistoryDateForDisplay(value) {
   const text = String(value || "").trim();
   if (!text) return "Sem data registrada";
-  if (/^\d{2}\/\d{2}\/\d{4}(?:\s+\d{2}:\d{2}(?::\d{2})?)?$/.test(text)) return text;
+  if (/^\d{2}-\d{2}-\d{4}(?:\s+\d{2}:\d{2}(?::\d{2})?)?$/.test(text)) return text;
   const parsed = new Date(text);
   if (Number.isNaN(parsed.getTime())) return text;
-  return new Intl.DateTimeFormat("pt-BR", {timeZone:"America/Sao_Paulo",day:"2-digit",month:"2-digit",year:"numeric",hour:"2-digit",minute:"2-digit",hour12:false}).format(parsed).replace(",", "");
+  return new Intl.DateTimeFormat("pt-BR", {timeZone:"America/Sao_Paulo",day:"2-digit",month:"2-digit",year:"numeric",hour:"2-digit",minute:"2-digit",hour12:false}).format(parsed).replace(",", "").replaceAll("/", "-");
 }
 
 function composeHistoryLine(dateTime, responsible, detail) {
@@ -3076,7 +3095,7 @@ function formatDate(value) {
     return "";
   }
   const [year, month, day] = value.split("-");
-  return `${day}/${month}/${year}`;
+  return `${day}-${month}-${year}`;
 }
 
 function normalizeDateKey(value) {
@@ -3094,7 +3113,7 @@ function formatMonth(value) {
     return "";
   }
   const [year, month] = value.split("-");
-  return `${month}/${year}`;
+  return `${month}-${year}`;
 }
 
 function escapeHtml(value) {

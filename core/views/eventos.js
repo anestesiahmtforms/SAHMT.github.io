@@ -63,6 +63,7 @@ const {Services,localStorage,sessionStorage,document,window,navigator,location,h
   let siglaChoiceResolver = null;
   let activeEventLaunch = null;
   let activeEventRecordEdit = null;
+  let eventRecordsLoadPromise = null;
   let autoFilledFieldLocks = new Set();
   let supportShortcutLaunchActive = false;
 
@@ -1118,7 +1119,7 @@ const {Services,localStorage,sessionStorage,document,window,navigator,location,h
     }
   }
 
-  function openMonthlyRecordsModal() {
+  async function openMonthlyRecordsModal() {
     if (!elements.monthlyRecordsModal) {
       return;
     }
@@ -1131,6 +1132,11 @@ const {Services,localStorage,sessionStorage,document,window,navigator,location,h
     elements.monthlyRecordsModal.classList.remove("hidden");
     elements.monthlyRecordsModal.setAttribute("aria-hidden", "false");
     document.body.classList.add("modal-open");
+    if (!eventRecords.length) {
+      setMonthlyRecordsStatus("Atualizando relatório mensal...", "");
+      await hydrateEventRecords();
+      renderMonthlyRecordsForMonth(elements.monthlyRecordsInput?.value || todayKey.slice(0, 7));
+    }
   }
 
   function closeMonthlyRecordsModal() {
@@ -1553,6 +1559,13 @@ const {Services,localStorage,sessionStorage,document,window,navigator,location,h
   }
 
   async function hydrateEventRecords() {
+    if (eventRecordsLoadPromise) return eventRecordsLoadPromise;
+    eventRecordsLoadPromise = hydrateEventRecordsInternal();
+    try { return await eventRecordsLoadPromise; }
+    finally { eventRecordsLoadPromise = null; }
+  }
+
+  async function hydrateEventRecordsInternal() {
     toggle(elements.recordsLoadingState, true);
 
     try {
@@ -2065,12 +2078,7 @@ const {Services,localStorage,sessionStorage,document,window,navigator,location,h
     if (!normalized) {
       return "Mes invalido";
     }
-
-    return new Intl.DateTimeFormat("pt-BR", {
-      timeZone: "America/Sao_Paulo",
-      month: "long",
-      year: "numeric"
-    }).format(new Date(`${normalized}-01T12:00:00`));
+    return `${normalized.slice(5, 7)}-${normalized.slice(0, 4)}`;
   }
 
   function setMonthlyRecordsStatus(message, tone) {
@@ -2141,7 +2149,7 @@ const {Services,localStorage,sessionStorage,document,window,navigator,location,h
     pdf.setFontSize(18);
     pdf.text(title, 40, 42);
     pdf.setFontSize(10);
-    pdf.text(`Gerado em ${new Intl.DateTimeFormat("pt-BR", { dateStyle: "short", timeStyle: "short" }).format(new Date())}`, 40, 62);
+    pdf.text(`Gerado em ${new Intl.DateTimeFormat("pt-BR", { timeZone: "America/Sao_Paulo", day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" }).format(new Date()).replaceAll("/", "-").replace(",", "")}`, 40, 62);
     pdf.setTextColor(20, 50, 84);
 
     const optionalPdfColumns = [
@@ -2290,10 +2298,10 @@ const {Services,localStorage,sessionStorage,document,window,navigator,location,h
   function formatHistoryDateForDisplay(value) {
     const text = String(value || "").trim();
     if (!text) return "Data não registrada";
-    if (/^\d{2}\/\d{2}\/\d{4}(?:\s+\d{2}:\d{2}(?::\d{2})?)?$/.test(text)) return text;
+    if (/^\d{2}-\d{2}-\d{4}(?:\s+\d{2}:\d{2}(?::\d{2})?)?$/.test(text)) return text;
     const parsed = new Date(text);
     if (Number.isNaN(parsed.getTime())) return text;
-    return new Intl.DateTimeFormat("pt-BR", {timeZone:"America/Sao_Paulo",day:"2-digit",month:"2-digit",year:"numeric",hour:"2-digit",minute:"2-digit",hour12:false}).format(parsed).replace(",", "");
+    return new Intl.DateTimeFormat("pt-BR", {timeZone:"America/Sao_Paulo",day:"2-digit",month:"2-digit",year:"numeric",hour:"2-digit",minute:"2-digit",hour12:false}).format(parsed).replace(",", "").replaceAll("/", "-");
   }
 
   function splitHistoryStates(value) {
@@ -2438,7 +2446,7 @@ const {Services,localStorage,sessionStorage,document,window,navigator,location,h
       hour: "2-digit",
       minute: "2-digit",
       second: "2-digit"
-    }).format(parsed).replace(",", "");
+    }).format(parsed).replace(",", "").replaceAll("/", "-");
   }
 
   function getEventEntryEditorLabel() {
@@ -3526,18 +3534,11 @@ const {Services,localStorage,sessionStorage,document,window,navigator,location,h
       day: "2-digit",
       month: "2-digit",
       year: "numeric"
-    }).format(new Date(`${dateKey}T12:00:00`));
+    }).format(new Date(`${dateKey}T12:00:00`)).replaceAll("/", "-");
   }
 
   function formatLong(dateKey) {
-    const value = new Intl.DateTimeFormat("pt-BR", {
-      weekday: "long",
-      day: "2-digit",
-      month: "long",
-      year: "numeric"
-    }).format(new Date(`${dateKey}T12:00:00`));
-
-    return value.charAt(0).toUpperCase() + value.slice(1);
+    return formatShort(dateKey);
   }
 
   function getWeekdayLabel(dateKey) {

@@ -625,6 +625,21 @@ body.modal-open {
   scrollbar-width: thin;
 }
 
+/* O relatório mensal permanece fixo e só a lista de registros pode crescer. */
+#monthlyRecordsModal .monthly-sheet {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  overflow: hidden;
+}
+#monthlyRecordsModal .monthly-records-list {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+}
+
 .choice-sheet__description {
   margin: 10px 0 0;
   font-size: 0.66rem;
