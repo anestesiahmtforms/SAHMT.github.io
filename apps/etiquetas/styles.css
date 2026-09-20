@@ -6802,3 +6802,12 @@ body::before {
 #edit-overlay.edit-overlay #edit-summary .confirm-edit-grid #edit-observacoes{height:56px!important;min-height:56px!important}
 #edit-overlay.edit-overlay #edit-save,
 #edit-overlay.edit-overlay .panel-home-button{display:flex!important;align-items:center!important;justify-content:center!important;text-align:center!important}
+
+/* iOS: controles menores que 16px provocam zoom automático ao tocar. */
+@media(max-width:640px){
+  #edit-overlay.edit-overlay{touch-action:manipulation!important;-webkit-text-size-adjust:100%!important}
+  #edit-overlay.edit-overlay .edit-card{transform:translate3d(0,0,0)!important;touch-action:manipulation!important}
+  #edit-overlay.edit-overlay #edit-summary .confirm-edit-grid input,
+  #edit-overlay.edit-overlay #edit-summary .confirm-edit-grid select,
+  #edit-overlay.edit-overlay #edit-summary .confirm-edit-grid textarea{font-size:16px!important;-webkit-text-size-adjust:100%!important}
+}
