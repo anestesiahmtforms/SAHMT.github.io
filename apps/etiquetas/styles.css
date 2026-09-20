@@ -6756,3 +6756,22 @@ body::before {
 #edit-overlay.edit-overlay .edit-card>.panel-base-action{flex:0 0 auto!important;margin:8px 0 0!important;padding-top:8px!important;border-top:1px solid rgba(13,50,87,.08)!important}
 #edit-overlay.edit-overlay .panel-home-button{width:100%!important;min-height:40px!important;padding:9px 12px!important;border-radius:16px!important;color:var(--ink)!important;text-transform:none!important}
 @media(max-width:640px){#edit-overlay.edit-overlay{padding:0!important}#edit-overlay.edit-overlay .edit-card{inset:0!important;width:100%!important;max-width:none!important;height:100dvh!important;max-height:none!important;padding:max(10px,env(safe-area-inset-top,0px)) max(10px,env(safe-area-inset-right,0px)) max(10px,env(safe-area-inset-bottom,0px))!important;border-radius:0!important}#edit-overlay.edit-overlay #edit-summary .confirm-edit-grid input,#edit-overlay.edit-overlay #edit-summary .confirm-edit-grid select,#edit-overlay.edit-overlay #edit-summary .confirm-edit-grid textarea{font-size:16px!important}}
+
+/* Editor sem barra de rolagem: todos os campos ficam presentes; somente os
+   campos incompatíveis com o Tipo ficam desativados. */
+#edit-overlay.edit-overlay .edit-card>#edit-summary{overflow:visible!important}
+#edit-overlay.edit-overlay #edit-summary .confirm-edit-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:5px!important}
+#edit-overlay.edit-overlay #edit-summary .confirm-edit-grid>label.full-width,
+#edit-overlay.edit-overlay #edit-summary .confirm-edit-grid>.edit-plantonistas-field,
+#edit-overlay.edit-overlay #edit-summary .confirm-edit-grid>label:has(textarea){grid-column:1/-1!important}
+#edit-overlay.edit-overlay #edit-summary .confirm-edit-grid>label{padding:4px 6px!important;gap:2px!important}
+#edit-overlay.edit-overlay #edit-summary .confirm-edit-grid input,
+#edit-overlay.edit-overlay #edit-summary .confirm-edit-grid select{min-height:32px!important;height:32px!important;font-size:.72rem!important}
+#edit-overlay.edit-overlay #edit-summary .confirm-edit-grid textarea{min-height:40px!important;height:40px!important;font-size:.72rem!important}
+#edit-overlay.edit-overlay #edit-summary .edit-plantonistas-grid{grid-template-columns:repeat(4,minmax(0,1fr))!important;gap:3px!important;padding:3px!important}
+#edit-overlay.edit-overlay #edit-summary .edit-plantonistas-grid label{min-height:24px!important;padding:3px 2px!important;font-size:.57rem!important;line-height:1.05!important}
+#edit-overlay.edit-overlay #edit-summary .confirm-edit-grid>label:has(input:disabled),
+#edit-overlay.edit-overlay #edit-summary .confirm-edit-grid>label:has(select:disabled){opacity:.55!important;filter:saturate(.55)!important}
+#edit-overlay.edit-overlay #edit-summary .confirm-edit-grid input:disabled,
+#edit-overlay.edit-overlay #edit-summary .confirm-edit-grid select:disabled,
+#edit-overlay.edit-overlay #edit-summary .confirm-edit-grid textarea:disabled{cursor:not-allowed!important;background:rgba(203,213,225,.48)!important;color:rgba(20,50,84,.55)!important}

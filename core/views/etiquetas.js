@@ -1602,22 +1602,25 @@ function syncInlineConditionalFields(root, prefix) {
   const needsValor = shouldRequireValor(typeEl?.value || "") || isSadtType(typeEl?.value || "");
   const needsConvenio = shouldRequireConvenio(typeEl?.value || "");
   const sadtMode = isSadtType(typeEl?.value || "");
+  const consultaMode = normalizeTipoValue(typeEl?.value || "") === CONSULTA_TYPE;
+  const keepAllEditorFields = prefix === "edit";
 
   if (surgeryFieldEl) {
-    surgeryFieldEl.hidden = sadtMode;
+    surgeryFieldEl.hidden = !keepAllEditorFields && sadtMode;
   }
   if (surgeryEl) {
-    surgeryEl.disabled = sadtMode;
-    surgeryEl.required = !sadtMode;
-    if (sadtMode) {
+    surgeryEl.disabled = sadtMode || consultaMode;
+    surgeryEl.required = !surgeryEl.disabled;
+    if (surgeryEl.disabled) {
       surgeryEl.value = "";
     }
   }
 
   if (valueFieldEl) {
-    valueFieldEl.hidden = !needsValor;
+    valueFieldEl.hidden = !keepAllEditorFields && !needsValor;
   }
   if (valueEl) {
+    valueEl.disabled = !needsValor;
     valueEl.required = needsValor;
     if (!needsValor) {
       valueEl.value = "";
@@ -1625,9 +1628,10 @@ function syncInlineConditionalFields(root, prefix) {
   }
 
   if (convenioFieldEl) {
-    convenioFieldEl.hidden = !needsConvenio;
+    convenioFieldEl.hidden = !keepAllEditorFields && !needsConvenio;
   }
   if (convenioEl) {
+    convenioEl.disabled = !needsConvenio;
     convenioEl.required = needsConvenio;
     if (!needsConvenio) {
       convenioEl.value = "";
@@ -2051,8 +2055,7 @@ function normalizeEditableRow(source) {
 
 function renderEditRecordFields() {
   const row = state.editingRow || {};
-  const isConsulta = normalizeTipoValue(row.tipo) === CONSULTA_TYPE;
-  const cirurgiaField = isConsulta ? "" : `
+  const cirurgiaField = `
       <label>
         <span>Cirurgia</span>
         <input id="edit-cirurgia" inputmode="numeric" value="${escapeHtml(row.cirurgia || "")}" required>
@@ -2071,7 +2074,7 @@ function renderEditRecordFields() {
       return `<label><input type="checkbox" name="edit-plantonista" value="${escapeHtml(value)}"${checked}> <span>${escapeHtml(value)}</span></label>`;
     })
     .join("");
-  const plantonistasField = isConsulta ? "" : `
+  const plantonistasField = `
       <label class="full-width edit-plantonistas-field">
         <span>Plantonista(s)</span>
         <div id="edit-plantonistas-grid" class="multi-select-options edit-plantonistas-grid">${editPlantonistaOptions}</div>
