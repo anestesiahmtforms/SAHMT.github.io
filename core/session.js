@@ -16,6 +16,17 @@ export class SessionManager {
   start(){
     if(this.started)return this.ready;
     this.started=true;
+    // A restauração pode aguardar rede, IndexedDB ou outra aba. Nunca deixe
+    // o shell preso indefinidamente em "Carregando seu acesso…".
+    this.restoreWatchdog=setTimeout(()=>{
+      const s=this.snapshot();
+      if(!s.initialized||s.status!=='validating')return;
+      const fallback=s.user
+        ? {status:'authenticated',memberStatus:'STALE',error:'O serviço demorou a responder. Sua conta continua conectada. Toque em Tentar novamente.'}
+        : {status:'unavailable',error:'O serviço demorou a responder. Tente novamente sem sair da conta.'};
+      this.update({...fallback,offline:!this.online()});
+      this.resolveReady();
+    },15000);
     try {this.unsubscribe=this.firebase.subscribe(user=>{this.restoring=this.restoreUser(user);this.restoring.catch(()=>{});},()=>{
       this.update({initialized:true,status:'unavailable',error:'Não foi possível restaurar a conta. Tente novamente sem sair.'});this.resolveReady();
     });}catch(error){this.update({initialized:true,status:'unavailable',error:error.message});this.resolveReady();}
@@ -33,7 +44,7 @@ export class SessionManager {
       user:cached,roles:cached?.roles||[],permissions:cached?.permissions||{},memberStatus:cached?'STALE':'PENDING',offline:!this.online(),
       ...this.trust.inspect(identity,!this.online())});
     try {await this.bootstrap();} catch(error) {if(generation===this.generation&&cached&&!['ACCESS_DENIED','AUTH_REAUTH_REQUIRED'].includes(error.code))this.update({status:'authenticated',memberStatus:'STALE',error:error.message});}
-    finally{if(generation===this.generation)this.resolveReady();}
+    finally{if(generation===this.generation){clearTimeout(this.restoreWatchdog);this.resolveReady();}}
   }
   async bootstrap(){
     if(this.pending)return this.pending;
