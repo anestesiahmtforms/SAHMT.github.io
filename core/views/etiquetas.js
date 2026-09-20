@@ -418,13 +418,11 @@ function initializeAuthorizedApp() {
     reportMonthEl.value = today.slice(0, 7);
   }
 
-  // Warm every authorized dependency in parallel after the session is ready.
-  // A slow AI health check must not delay spreadsheet summaries or page entry.
+  // Only metadata is needed to open the module. Reports and AI health are
+  // demand-loaded so they do not compete with the first authorized screen
+  // render or with one another on the Apps Script endpoint.
   state.authorizedWarmupPromise = Promise.allSettled([
-    loadAiHealthWithRetry(),
     loadMetadata(),
-    loadSummary({ silent: true, date: today }),
-    loadMonthlySummary({ silent: true }),
   ]).then(() => undefined);
 
   return state.authorizedWarmupPromise;
