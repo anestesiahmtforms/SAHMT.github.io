@@ -1761,14 +1761,13 @@ function renderMonthlyList(rows, emptyMessage = "Nenhum registro encontrado para
     <div class="monthly-records">
       ${rows.map((row, index) => {
         const alertClass = isAlertType(row.tipo) ? " alert-row" : "";
-        const editedClass = row.editadoEm || row.editadoPor || row.resumoEdicao || row.observacaoAtualizadaEm || row.observacaoAtualizadaPor ? " edited-row" : "";
+        const editedClass = row.observacaoAtualizadaEm || row.observacaoAtualizadaPor ? " edited-row" : "";
         const monthlyTone = ["a", "b", "c", "d"][index % 4];
         return `
         <article class="record-card record-card--tone-${(index % 4) + 1} summary-item${alertClass}${editedClass}" data-row-number="${escapeHtml(row.rowNumber || "")}" tabindex="0">
           <div class="record-card__number">${index + 1}</div>
           <div class="record-card__rows">
             ${renderEtiquetaRecordFields(row)}
-            ${renderSummaryEditBlock(row)}
             ${renderSummaryObservationBlock(row, true)}
           </div>
         </article>
