@@ -6803,6 +6803,14 @@ body::before {
 #edit-overlay.edit-overlay #edit-save,
 #edit-overlay.edit-overlay .panel-home-button{display:flex!important;align-items:center!important;justify-content:center!important;text-align:center!important}
 
+/* Relatório mensal: o rodapé é uma linha própria do modal e não pode ser
+   coberto pela lista ou pelo botão de geração do relatório. */
+#monthly-panel.is-open{display:grid!important;grid-template-rows:auto auto minmax(0,1fr) auto!important;align-content:stretch!important;min-height:0!important;height:95dvh!important;max-height:95dvh!important;overflow:hidden!important;box-sizing:border-box!important}
+#monthly-panel.is-open .monthly-report-panel{display:grid!important;grid-template-rows:auto minmax(0,1fr) auto!important;flex:1 1 auto!important;min-height:0!important;height:auto!important;overflow:hidden!important}
+#monthly-panel.is-open .monthly-list{min-height:0!important;height:auto!important;max-height:none!important;overflow-y:auto!important;overflow-x:hidden!important}
+#monthly-panel.is-open>.panel-base-action{display:flex!important;flex:0 0 auto!important;min-height:50px!important;align-items:center!important;justify-content:center!important;margin:8px 0 0!important;padding:8px 0 max(8px,env(safe-area-inset-bottom,0px))!important;border-top:1px solid rgba(13,50,87,.1)!important;z-index:5!important;background:linear-gradient(180deg,rgba(237,227,207,.4),rgba(237,227,207,.98))!important}
+#monthly-panel.is-open>.panel-base-action .panel-home-button{display:flex!important;align-items:center!important;justify-content:center!important;text-align:center!important;min-height:42px!important}
+
 /* iOS: controles menores que 16px provocam zoom automático ao tocar. */
 @media(max-width:640px){
   #edit-overlay.edit-overlay{touch-action:manipulation!important;-webkit-text-size-adjust:100%!important}
