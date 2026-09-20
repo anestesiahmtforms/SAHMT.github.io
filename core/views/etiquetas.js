@@ -444,7 +444,9 @@ async function loadAiHealthWithRetry() {
 
 
 
-function applyAuthenticatedUser(auth){state.auth={email:auth.email||"",name:auth.name||"",authenticated:auth.authenticated===true};state.authenticated=state.auth.authenticated;}
+function applyAuthenticatedUser(auth){state.auth={email:auth.email||"",name:auth.name||"",sigla:auth.sigla||"",permissions:auth.permissions||{},authenticated:auth.authenticated===true};state.authenticated=state.auth.authenticated;}
+
+function canEditLabelRow(row){const email=String(state.auth?.email||'').trim().toLowerCase();return state.auth?.permissions?.events===true||String(row?.criadoPor||row?.createdBy||'').trim().toLowerCase()===email;}
 
 
 
@@ -1791,6 +1793,7 @@ function renderSummary(rows, emptyMessage = "Nenhuma entrada encontrada nesta da
     const alertClass = isAlertType(row.tipo) ? " alert-row" : "";
     const editedClass = row.editadoEm || row.editadoPor || row.resumoEdicao || row.observacaoAtualizadaEm || row.observacaoAtualizadaPor ? " edited-row" : "";
     const editBlock = renderSummaryEditBlock(row);
+    const actions = canEditLabelRow(row) ? '<div class="record-card__actions"><button type="button" class="record-card__edit-button" data-edit-record>EDITAR REGISTRO</button></div>' : '';
     const observationBlock = renderSummaryObservationBlock(row);
     const dailyTone = ["a", "b", "c", "d"][index % 4];
     return `
@@ -1800,9 +1803,7 @@ function renderSummary(rows, emptyMessage = "Nenhuma entrada encontrada nesta da
           ${renderEtiquetaRecordFields(row)}
           ${editBlock}
           ${observationBlock}
-          <div class="record-card__actions">
-            <button type="button" class="record-card__edit-button" data-edit-record>EDITAR REGISTRO</button>
-          </div>
+          ${actions}
         </div>
       </article>
     `;
@@ -1812,13 +1813,13 @@ function renderSummary(rows, emptyMessage = "Nenhuma entrada encontrada nesta da
     button.addEventListener("click", (event) => {
       event.preventDefault();
       event.stopPropagation();
-      openEditRecord(rows[index]);
+      if(canEditLabelRow(rows[index]))openEditRecord(rows[index]);
     });
   });
 
   summaryListEl.querySelectorAll(".summary-item").forEach((item, index) => {
     const row = rows[index];
-    const open = () => openEditRecord(row);
+      const open = () => {if(canEditLabelRow(row))openEditRecord(row);};
     item.addEventListener("keydown", (event) => {
       if (event.key === "Enter") {
         open();
@@ -1844,9 +1845,10 @@ function renderEtiquetaRecordFields(row) {
     .filter(([, value]) => String(value || "").trim() && String(value).trim() !== "-")
     .map(([label, value]) => {
       const isRegistration = label === "Responsável pelo Registro";
+      const isAuthenticatedPlantonista = label === "Plantonista(s)" && isAuthenticatedUserSigla(value);
       const rowClass = isRegistration ? " record-card__row--registration" : "";
       const labelClass = isRegistration ? " record-card__label--registration" : "";
-      const userClass = isRegistration && isAuthenticatedUserEmail(value)
+      const userClass = (isRegistration && isAuthenticatedUserEmail(value)) || isAuthenticatedPlantonista
         ? " record-card__value--authenticated-user"
         : "";
       return `<div class="record-card__row${rowClass}"><span class="record-card__label${labelClass}">${escapeHtml(label)}</span><span class="record-card__value${userClass}">${escapeHtml(value)}</span></div>`;
@@ -1860,6 +1862,11 @@ function isAuthenticatedUserEmail(value) {
   return Boolean(authenticatedEmail && candidate && (
     candidate === authenticatedEmail || candidate.includes(authenticatedEmail)
   ));
+}
+
+function isAuthenticatedUserSigla(value) {
+  const sigla = String(state.auth?.sigla || "").trim().toLowerCase();
+  return Boolean(sigla && String(value || "").toLowerCase().split(/[^a-z0-9]+/).filter(Boolean).includes(sigla));
 }
 
 function renderSummaryField(label, value) {
