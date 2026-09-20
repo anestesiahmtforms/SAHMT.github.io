@@ -801,10 +801,12 @@ async function processCurrentImage() {
     const missingKeys = normalizeTipoValue(parsed.tipo) === SADT_TYPE
       ? ["nomePaciente", "convenio", "atendimento"]
       : ["nomePaciente", "convenio", "cirurgia", "atendimento"];
+    const uncertain = Array.isArray(parsed.camposIncertos) ? parsed.camposIncertos.filter(Boolean) : [];
     const missing = missingKeys.filter((key) => !parsed[key]);
-    const qualityNote = missing.length ? " Confira a foto e tente novamente com a etiqueta inteira mais nitida." : "";
-    const missingNote = missing.length ? ` Confira manualmente: ${missing.join(", ")}.` : "";
-    setStatus(`Leitura Concluída.${missingNote}${qualityNote}`, missing.length ? "info" : "success");
+    const reviewFields = [...new Set([...uncertain, ...missing])];
+    const qualityNote = reviewFields.length ? " Confira a foto e confirme os campos antes de enviar." : "";
+    const missingNote = reviewFields.length ? ` Confira manualmente: ${reviewFields.join(", ")}.` : "";
+    setStatus(`Leitura Concluída.${missingNote}${qualityNote}`, reviewFields.length ? "info" : "success");
   } catch (error) {
     state.aiHealth = {
       ok: false,
@@ -833,7 +835,7 @@ async function prepareAiImageSet(blob) {
 
   let imageDataUrl;
   try {
-    imageDataUrl = renderAiImage(image, width, height, 1600, 0.86);
+    imageDataUrl = renderAiImage(image, width, height, 2000, 0.92);
   } catch (error) {
     console.warn("Falha ao otimizar imagem; usando a foto original:", error);
     imageDataUrl = await blobToDataUrl(blob);
@@ -846,6 +848,7 @@ async function prepareAiImageSet(blob) {
   const lowerHeight = Math.max(1, height - lowerTop);
   const split = Math.round(width * 0.5);
   const numericImageDataUrls = [
+    renderAiCrop(image, 0, lowerTop, width, lowerHeight, 1.9),
     renderAiCrop(image, 0, lowerTop, split, lowerHeight, 2.6),
     renderAiCrop(image, split, lowerTop, width - split, lowerHeight, 2.6),
   ].filter(Boolean);
@@ -882,7 +885,7 @@ function renderAiCrop(image, sourceX, sourceY, sourceWidth, sourceHeight, scale)
     context.filter = "none";
   }
   context.drawImage(image, sourceX, sourceY, sourceWidth, sourceHeight, 0, 0, canvas.width, canvas.height);
-  return canvas.toDataURL("image/jpeg", 0.88);
+  return canvas.toDataURL("image/jpeg", 0.9);
 }
 
 function renderAiImage(image, sourceWidth, sourceHeight, maxWidth, quality) {
