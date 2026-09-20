@@ -848,9 +848,9 @@ async function prepareAiImageSet(blob) {
   const lowerHeight = Math.max(1, height - lowerTop);
   const split = Math.round(width * 0.5);
   const numericImageDataUrls = [
-    renderAiCrop(image, 0, lowerTop, width, lowerHeight, 1.9),
-    renderAiCrop(image, 0, lowerTop, split, lowerHeight, 2.6),
-    renderAiCrop(image, split, lowerTop, width - split, lowerHeight, 2.6),
+    renderAiCrop(image, 0, lowerTop, width, lowerHeight, 1.9, false),
+    renderAiCrop(image, 0, lowerTop, split, lowerHeight, 2.6, true),
+    renderAiCrop(image, split, lowerTop, width - split, lowerHeight, 2.6, true),
   ].filter(Boolean);
 
   return { imageDataUrl, numericImageDataUrls };
@@ -872,17 +872,19 @@ function loadImageForAi(blob) {
   });
 }
 
-function renderAiCrop(image, sourceX, sourceY, sourceWidth, sourceHeight, scale) {
+function renderAiCrop(image, sourceX, sourceY, sourceWidth, sourceHeight, scale, enhance) {
   const canvas = document.createElement("canvas");
   canvas.width = Math.max(1, Math.round(sourceWidth * scale));
   canvas.height = Math.max(1, Math.round(sourceHeight * scale));
   const context = canvas.getContext("2d", { willReadFrequently: true });
   context.imageSmoothingEnabled = true;
   context.imageSmoothingQuality = "high";
-  try {
-    context.filter = "grayscale(1) contrast(1.18)";
-  } catch {
-    context.filter = "none";
+  if (enhance) {
+    try {
+      context.filter = "grayscale(1) contrast(1.18)";
+    } catch {
+      context.filter = "none";
+    }
   }
   context.drawImage(image, sourceX, sourceY, sourceWidth, sourceHeight, 0, 0, canvas.width, canvas.height);
   return canvas.toDataURL("image/jpeg", 0.9);
