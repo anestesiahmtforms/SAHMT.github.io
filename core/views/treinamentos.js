@@ -13,13 +13,19 @@ function serverProgress(p){if(!p)return null;const values=[];for(const [from,to]
   function persist(force=false){if(!selected||!player)return;const duration=player.getDuration?.()||0,position=player.getCurrentTime?.()||0;try{localStorage.setItem(progressKey(selected.id),JSON.stringify({position,watched:[...watched],asked,ended}));}catch{}if(duration<=0||syncingProgress||(!force&&Date.now()-lastProgressSync<15000))return;lastProgressSync=Date.now();syncingProgress=true;api("progress",{trainingId:selected.id,accessId,duration,position,watchedRanges:watchedIntervals(duration)}).catch(e=>{$("player-status").textContent="Progresso ainda não sincronizado: "+e.message;lastProgressSync=0;}).finally(()=>{syncingProgress=false;});}
   async function api(action,payload={}){return Services.training(action,payload);}
   function status(text){$('training-status').textContent=text;}
-  async function load(){
+  let loading=null,loadGeneration=0;
+  function load(){if(loading)return loading;loading=loadCatalog().finally(()=>{loading=null;});return loading;}
+  async function loadCatalog(){
+    const generation=++loadGeneration,account=Services.generation;
     $('training-retry').hidden=true;status('Carregando treinamentos…');
-    try{const data=await api('catalog');if(!Array.isArray(data.trainings))throw new Error('Não foi possível ler o catálogo.');catalog=data.trainings;render(data);status(catalog.length?'':'Nenhum treinamento disponível.');}
+    try{const data=await api('catalog');if(generation!==loadGeneration||account!==Services.generation)return;if(!Array.isArray(data.trainings))throw new Error('Não foi possível ler o catálogo.');catalog=data.trainings;render(data);status(catalog.length?'':'Nenhum treinamento disponível.');}
     catch(e){status(e.message);$('training-retry').hidden=e.code==='FORBIDDEN';if(e.code==='FORBIDDEN'){$('training-catalog').replaceChildren();$('training-score').textContent='Acesso restrito às contas habilitadas para treinamentos.';}}
   }
   function render(data){
-    $('training-score').replaceChildren(document.createTextNode(`Sua pontuação: ${data.totalPoints} / ${data.totalAvailablePoints} pontos · `));const percent=document.createElement('strong');percent.textContent=`${data.scorePercentage}%`;$('training-score').append(percent);
+    if($('training-activities'))window.SAHMT_ACTIVITIES?.render($('training-activities'),data.activities||[],Services,{onConfirmed:()=>load()});
+    const hasActivities=(data.activities||[]).length>0||(Number(data.activityPoints)!==0&&Number.isFinite(Number(data.activityPoints)));
+    const scoreText=hasActivities?`Sua pontuação: ${data.totalPoints} pontos · Pontuação existente: ${data.legacyPoints??0} · Atividades: ${data.activityPoints??0} · Indicador anterior: `:`Sua pontuação: ${data.totalPoints} / ${data.totalAvailablePoints} pontos · `;
+    $('training-score').replaceChildren(document.createTextNode(scoreText));const percent=document.createElement('strong');percent.textContent=`${data.scorePercentage}%`;$('training-score').append(percent);
     $('training-catalog').replaceChildren();for(const item of catalog){const button=document.createElement('button');button.className='training-item'+(item.completed?' completed':'');const label=document.createElement('span'),title=document.createElement('strong');title.textContent=item.title;label.append(title);if(saved(item.id)&&!item.completed){const resume=document.createElement('small');resume.textContent='Continuar de onde parou';label.append(resume);}const points=document.createElement('span');points.className='points';points.textContent=`${item.completed?'✓ ':''}${item.accessPoints+item.completionPoints} Pontos`;button.append(label,points);button.onclick=()=>open(item).catch(e=>{$('player-status').textContent=e.message;status(e.message);});$('training-catalog').append(button);}
   }
   async function youtube(){return window.SAHMT_SHELL.youtube();}
@@ -44,6 +50,7 @@ function serverProgress(p){if(!p)return null;const values=[];for(const [from,to]
   let catalogReady=false;
   function openRequested(){const id=new URL(window.location.href).searchParams.get('trainingId');if(id&&catalog.some(t=>t.id===id)&&selected?.id!==id)open(catalog.find(t=>t.id===id)).catch(e=>status(e.message));}
   document.addEventListener('sahmt:show',()=>{if(catalogReady)load().then(openRequested);});
+  window.SAHMT_ACTIVITIES?.watchReturn({window,document,refresh:async()=>{if(loading)await loading;return load();},isActive:()=>catalogReady&&!selected});
   await load();
   catalogReady=true;if(!document.hidden)openRequested();
 })();

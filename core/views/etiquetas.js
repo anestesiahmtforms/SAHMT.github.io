@@ -1976,7 +1976,7 @@ function openEditRecord(rowOrRowNumber) {
   renderEditRecordFields();
   setEditFeedback("", "neutral");
   editOverlayEl.hidden = false;
-  editContextEl.textContent = `Lancado por: ${row.criadoPor || "Nao informado"} | Criado em: ${row.criadoEm || "Nao informado"}`;
+  editContextEl.textContent = `Lançado por: ${row.criadoPor || "Não informado"} | Criado em: ${formatHistoryDateForDisplay(row.criadoEm) || "Não informado"}`;
 }
 
 function normalizeEditDate(value) {

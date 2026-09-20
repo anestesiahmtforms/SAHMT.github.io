@@ -5966,6 +5966,32 @@ body::before {
   #edit-overlay #edit-summary .confirm-edit-grid > label {
     border-radius: 11px;
   }
+
+  /* The edit sheet must fit on a 360px phone without a hidden lower field. */
+  #edit-overlay.edit-overlay .edit-card { padding: 6px !important; }
+  #edit-overlay.edit-overlay #edit-summary { overflow: hidden !important; }
+  #edit-overlay.edit-overlay #edit-summary .confirm-edit-grid { gap: 4px !important; }
+  #edit-overlay.edit-overlay #edit-summary .confirm-edit-grid > label {
+    min-height: 34px !important;
+    padding: 2px 4px !important;
+    gap: 1px !important;
+  }
+  #edit-overlay.edit-overlay #edit-summary .confirm-edit-grid > label > input,
+  #edit-overlay.edit-overlay #edit-summary .confirm-edit-grid > label > select,
+  #edit-overlay.edit-overlay #edit-summary .confirm-edit-grid > label > textarea {
+    min-height: 30px !important;
+    height: 30px !important;
+    padding: 2px 5px !important;
+  }
+  #edit-overlay.edit-overlay #edit-summary .confirm-edit-grid > label:has(textarea) { min-height: 38px !important; }
+  #edit-overlay.edit-overlay #edit-summary .confirm-edit-grid > label > textarea { height: 30px !important; }
+  #edit-overlay.edit-overlay .edit-plantonistas-grid {
+    height: 64px !important;
+    max-height: 64px !important;
+    padding: 3px !important;
+    gap: 3px !important;
+  }
+  #edit-overlay.edit-overlay .edit-plantonistas-grid label { min-height: 18px !important; padding: 1px !important; font-size: .58rem !important; }
 }
 
 /* Restore the live validation colors above the premium field surfaces. */
@@ -6529,4 +6555,23 @@ body::before {
   #edit-overlay.has-edit-fields #edit-summary {
     min-height: 230px !important;
   }
+}
+
+/* Final cascade for the fixed editor on compact phones. */
+@media (max-width: 680px) {
+  #edit-overlay.has-edit-fields .edit-card { padding: 6px !important; }
+  #edit-overlay.has-edit-fields #edit-summary { min-height: 0 !important; overflow: hidden !important; }
+  #edit-overlay.has-edit-fields #edit-summary .confirm-edit-grid { gap: 3px !important; }
+  #edit-overlay.has-edit-fields #edit-summary .confirm-edit-grid > label {
+    min-height: 27px !important; height: 27px !important; padding: 1px 3px !important; gap: 0 !important;
+  }
+  #edit-overlay.has-edit-fields #edit-summary .confirm-edit-grid > label > input,
+  #edit-overlay.has-edit-fields #edit-summary .confirm-edit-grid > label > select,
+  #edit-overlay.has-edit-fields #edit-summary .confirm-edit-grid > label > textarea {
+    min-height: 22px !important; height: 22px !important; padding: 0 4px !important;
+  }
+  #edit-overlay.has-edit-fields #edit-summary .confirm-edit-grid > label:has(textarea) { height: 31px !important; min-height: 31px !important; }
+  #edit-overlay.has-edit-fields #edit-summary .edit-plantonistas-field { height: 70px !important; min-height: 70px !important; }
+  #edit-overlay.has-edit-fields #edit-summary .edit-plantonistas-grid { height: 46px !important; max-height: 46px !important; padding: 2px !important; gap: 2px !important; }
+  #edit-overlay.has-edit-fields .edit-plantonistas-grid label { min-height: 14px !important; height: 14px !important; padding: 0 !important; font-size: .55rem !important; }
 }

@@ -155,6 +155,7 @@ function configureLink(link, url, itemTitle, audienceLabel) {
   link.dataset.url = url;
   link.dataset.item = itemTitle;
   link.dataset.audience = audienceLabel;
+  link.dataset.scoringCategory = 'NON_SCORING';
   link.onclick = null;
 
   if (url === "#") {
@@ -172,17 +173,31 @@ function openFolder(item, index) {
   setTheme(folderGlyph, index);
   configureLink(folderGestor, item.gestorUrl, item.title, "Gestor");
   configureLink(folderEquipe, item.equipeUrl, item.title, "Equipe");
+  loadManagementActivities(item.title);
 
   folderOverlay.classList.remove("hidden");
   folderOverlay.setAttribute("aria-hidden", "false");
   document.body.classList.add("folder-open");
 }
 
+let activityGeneration=0,currentManagementKey='';
+async function loadManagementActivities(managementKey){
+ currentManagementKey=managementKey;
+ const container=document.getElementById('management-activities'),generation=++activityGeneration;
+ if(!container||!Services.activities)return;
+ container.replaceChildren();container.hidden=true;
+ try{const result=await Services.activities('list',{managementKey});if(generation!==activityGeneration)return;window.SAHMT_ACTIVITIES?.render(container,result.activities||[],Services);}
+ catch(error){if(generation===activityGeneration){container.hidden=false;container.textContent='Atividades: '+error.message;}}
+}
+
 function closeFolderOverlay() {
+  activityGeneration++;
   folderOverlay.classList.add("hidden");
   folderOverlay.setAttribute("aria-hidden", "true");
   document.body.classList.remove("folder-open");
 }
+
+window.SAHMT_ACTIVITIES?.watchReturn({window,document,refresh:()=>loadManagementActivities(currentManagementKey),isActive:()=>!!currentManagementKey&&!folderOverlay.classList.contains('hidden')});
 
 function openDirectItem(item) {
 

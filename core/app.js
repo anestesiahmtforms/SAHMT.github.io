@@ -2,6 +2,8 @@ import {Services} from './auth.js';
 import {createPageScope} from './runtime.js';
 import {pageData} from './page-data.js';
 import {registerPwa} from './pwa.js';
+import {renderActivities,watchActivityReturn} from './activity-ui.js';
+window.SAHMT_ACTIVITIES={render:renderActivities,watchReturn:watchActivityReturn};
 export const base=new URL('../',import.meta.url);
 const routes={'escala-ferias-imagens.html':'offline','':'home','index.html':'home','apps/eventos/':'eventos','apps/eventos/index.html':'eventos','apps/etiquetas/':'etiquetas','apps/etiquetas/index.html':'etiquetas','apps/gestao/':'gestao','apps/gestao/index.html':'gestao','apps/checklist/':'checklist','apps/checklist/index.html':'checklist','apps/treinamentos/':'treinamentos','apps/treinamentos/index.html':'treinamentos'};
 const names={offline:'Escala/Férias OFF LINE',home:'SAHMT',eventos:'Operacional',etiquetas:'Etiquetas',gestao:'Gestão',checklist:'Checklist',treinamentos:'Treinamentos'};
@@ -55,7 +57,7 @@ export async function navigate(input,{replace=false,fromHistory=false}={}){
   // Never carry credentials in application URLs.
   for(const key of ['authToken','deviceToken','userEmail','userName'])url.searchParams.delete(key);
   const ticket=++sequence;lastRequested=url;status.hidden=true;retry.hidden=true;
-  const loading=setTimeout(()=>{if(ticket===sequence){status.textContent='Abrindo '+names[id]+'…';status.hidden=false;}},250);
+  const loading=setTimeout(()=>{if(ticket===sequence){status.textContent='Carregando dados de '+names[id]+'…';status.hidden=false;}},250);
   try{
     await window.SAHMT_AUTH.requireAccess({moduleId:id.toUpperCase(),pageId:'home'});if(ticket!==sequence)return;
     const page=await loadPage(id,url);if(ticket!==sequence){if(current!==page)page.ctx.deactivate();return;}

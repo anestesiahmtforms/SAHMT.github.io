@@ -17,7 +17,7 @@ export class Services {
   try{const result=await this.api.call(action,data,{...options,requestId});this.operations.delete(signature);this.store.invalidate(action.split('.')[0]+'.');if(action.startsWith('eventos.'))this.store.invalidate('escala.');if(action.startsWith('eventos.')||action.startsWith('escala.'))this.store.invalidate('checklist.');if(action.startsWith('checklist.'))this.store.invalidate('treinamentos.');return result;}
   catch(e){if(generation!==this.session.snapshot?.()?.generation){const changed=new Error('A conta foi alterada.');changed.code='ACCOUNT_CHANGED';throw changed;}if(e.retryable&&options.queue===true){this.outbox.enqueue(action,data,requestId);return {queued:true};}if(!e.retryable&&!['INTERNAL','RECOVERY_REQUIRED'].includes(e.code))this.operations.delete(signature);throw e;}
  }
- async bootstrap(){this.bootstrapData=await this.read('app.bootstrap');return this.bootstrapData;}
+ async bootstrap(){await this.confirmAccount();this.bootstrapData=this.session.bootstrapData||this.bootstrapData||{user:this.user,contacts:[]};return this.bootstrapData;}
  async schedule(){return this.read('escala.list');}
  async highlights(){return (await this.read('escala.highlights')).highlights;}
  async mark(date,sigla,marked){return (await this.write('escala.mark',{date,sigla,marked})).highlights;}
@@ -29,6 +29,7 @@ export class Services {
  async eventLists(){const o=await this.read('eventos.options');return Array.from({length:Math.max(o.payers.length,o.creditors.length)},(_,i)=>[o.eventTypes[i]||'',o.payers[i]||'',o.creditors[i]||'',o.shifts[i]||'',o.delayMultiples[i]||'',o.dc[i]||'']);}
  async checklist(action,payload={},options={}){const {requestId,...data}=payload;const result=['record','sign'].includes(action)?await this.write('checklist.'+action,data,{requestId}):await this.read('checklist.'+action,data,options.force);return {ok:true,...result,...(result.record?{...result.record,at:result.record.createdAt}:{})};}
  async training(action,payload={}){const result=action==='catalog'?await this.read('treinamentos.list',{},true):await this.write('treinamentos.'+action,payload);return {ok:true,apiVersion:1,...result};}
+ async activities(action,payload={}){return action==='interact'?this.write('activities.interact',payload):this.read('activities.'+action,payload,true);}
  pending(action){return this.outbox.read().filter(item=>item.action===action);}
  async flush(){await this.confirmAccount();const result=await this.outbox.flush();if(result.sent)this.store.invalidate();return result;}
 }
