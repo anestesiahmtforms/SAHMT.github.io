@@ -14,20 +14,19 @@
 #update-dialog p{margin:0 0 12px!important;line-height:1.4!important;text-align:center!important}
 #update-dialog button{min-height:42px!important;width:100%!important;margin:4px 0!important;text-align:center!important}
 
-/* Regra final: o aviso de atualização é um cartão independente, nunca um
-   modal quase em tela cheia. O top/left ficam depois do inset para impedir
-   que a regra geral de dialog o empurre para a lateral. */
+/* Regra final: o aviso de atualização é um cartão independente, centralizado
+   pelo próprio mecanismo nativo de <dialog>. Usar inset:0 + margin:auto é
+   mais estável que top/left + translate em browsers móveis e evita que o
+   cartão fique deslocado para a lateral. */
 #update-dialog {
-  inset: auto !important;
-  top: 50% !important;
-  left: 50% !important;
-  right: auto !important;
-  bottom: auto !important;
+  position: fixed !important;
+  inset: 0 !important;
   width: min(88vw, 390px) !important;
-  height: auto !important;
+  height: fit-content !important;
   max-width: 390px !important;
   max-height: min(78dvh, 520px) !important;
-  margin: 0 !important;
-  transform: translate(-50%, -50%) !important;
+  margin: auto !important;
+  transform: none !important;
   overflow: hidden !important;
+  box-sizing: border-box !important;
 }
