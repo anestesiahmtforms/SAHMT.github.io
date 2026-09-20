@@ -6,3 +6,10 @@
   dialog{position:fixed!important;inset:2.5dvh 2.5vw!important;overflow:hidden!important;box-sizing:border-box!important;transform:none!important;zoom:1!important}
   dialog>*{min-width:0!important;max-width:100%!important;box-sizing:border-box!important}
 }
+
+/* O banner de atualização usa o mesmo cartão compacto e centralizado do
+   banner de Cadastro; somente os modais internos continuam amplos. */
+#update-dialog{position:fixed!important;inset:auto!important;width:min(92vw,390px)!important;max-width:390px!important;height:auto!important;max-height:78dvh!important;margin:auto!important;padding:18px!important;overflow:hidden!important;transform:none!important;box-sizing:border-box!important;border-radius:24px!important}
+#update-dialog h2{margin:0 0 10px!important;text-align:center!important}
+#update-dialog p{margin:0 0 12px!important;line-height:1.4!important;text-align:center!important}
+#update-dialog button{min-height:42px!important;width:100%!important;margin:4px 0!important;text-align:center!important}
