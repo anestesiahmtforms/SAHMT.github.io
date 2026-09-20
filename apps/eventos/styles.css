@@ -1261,6 +1261,13 @@ body.modal-open {
   font-size: 0.7rem;
 }
 
+/* Título principal da Escala: mais legível sem deslocar o calendário. */
+.schedule-card .card-title {
+  font-size: 0.9rem;
+  line-height: 1.15;
+  letter-spacing: 0.04em;
+}
+
 .support-launch-button {
   min-width: 0;
   padding: 7px 14px;

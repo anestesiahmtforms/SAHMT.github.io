@@ -1,7 +1,7 @@
 import {safePayload} from './outbox.js';
-const br=iso=>{const text=String(iso||'').trim();const match=text.match(/^(\d{4})-(\d{2})-(\d{2})/);return match?`${match[3]}-${match[2]}-${match[1]}`:text;};
-const dateTimeDisplay=value=>{const text=String(value||'').trim();if(!text)return '';const parsed=new Date(text);if(Number.isNaN(parsed.getTime()))return text;return new Intl.DateTimeFormat('pt-BR',{timeZone:'America/Sao_Paulo',day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit',hour12:false}).format(parsed).replace(',', '').replaceAll('/','-');};
-const iso=value=>/^\d{2}\/\d{2}\/\d{4}$/.test(value)?value.split('/').reverse().join('-'):value;
+const br=iso=>{const text=String(iso||'').trim();const match=text.match(/^(\d{4})-(\d{2})-(\d{2})/);return match?`${match[3]}/${match[2]}/${match[1]}`:text;};
+const dateTimeDisplay=value=>{const text=String(value||'').trim();if(!text)return '';const parsed=new Date(text);if(Number.isNaN(parsed.getTime()))return text;return new Intl.DateTimeFormat('pt-BR',{timeZone:'America/Sao_Paulo',day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit',hour12:false}).format(parsed).replace(',', '');};
+const iso=value=>{const text=String(value??'').trim();const brMatch=text.match(/^(\d{2})[\/-](\d{2})[\/-](\d{4})$/);if(brMatch)return `${brMatch[3]}-${brMatch[2]}-${brMatch[1]}`;const isoMatch=text.match(/^(\d{4})-(\d{2})-(\d{2})/);return isoMatch?`${isoMatch[1]}-${isoMatch[2]}-${isoMatch[3]}`:text;};
 export class Services {
  constructor({api,session,store,outbox}){Object.assign(this,{api,session,store,outbox});this.operations=new Map();this.uiMemory=new Map();this.bootstrapData=null;}
  clear(){this.operations.clear();this.uiMemory.clear();this.bootstrapData=null;this.store.clear();}

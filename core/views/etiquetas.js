@@ -1959,10 +1959,15 @@ function renderHistoryLine(label, value) {
 function formatHistoryDateForDisplay(value) {
   const text = String(value || "").trim();
   if (!text) return "Sem data registrada";
-  if (/^\d{2}-\d{2}-\d{4}(?:\s+\d{2}:\d{2}(?::\d{2})?)?$/.test(text)) return text;
+  const brMatch = text.match(/^(\d{2})[\/-](\d{2})[\/-](\d{4})(?:\s+(\d{2}):(\d{2})(?::\d{2})?)?$/);
+  if (brMatch) return `${brMatch[1]}/${brMatch[2]}/${brMatch[3]} ${brMatch[4] || "00"}:${brMatch[5] || "00"}`;
+  if (/^\d{4}-\d{2}-\d{2}$/.test(text)) {
+    const [year, month, day] = text.split("-");
+    return `${day}/${month}/${year} 00:00`;
+  }
   const parsed = new Date(text);
   if (Number.isNaN(parsed.getTime())) return text;
-  return new Intl.DateTimeFormat("pt-BR", {timeZone:"America/Sao_Paulo",day:"2-digit",month:"2-digit",year:"numeric",hour:"2-digit",minute:"2-digit",hour12:false}).format(parsed).replace(",", "").replaceAll("/", "-");
+  return new Intl.DateTimeFormat("pt-BR", {timeZone:"America/Sao_Paulo",day:"2-digit",month:"2-digit",year:"numeric",hour:"2-digit",minute:"2-digit",hour12:false}).format(parsed).replace(",", "");
 }
 
 function composeHistoryLine(dateTime, responsible, detail) {

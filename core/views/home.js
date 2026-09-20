@@ -1483,7 +1483,7 @@ const {Services,localStorage,sessionStorage,document,window,navigator,location,h
       day: "2-digit",
       month: "2-digit",
       year: "numeric"
-    }).format(new Date(`${dateKey}T12:00:00`)).replaceAll("/", "-");
+    }).format(new Date(`${dateKey}T12:00:00`));
   }
 
   function formatLong(dateKey) {

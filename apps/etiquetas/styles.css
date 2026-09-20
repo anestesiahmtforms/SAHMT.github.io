@@ -5994,6 +5994,26 @@ body::before {
   #edit-overlay.edit-overlay .edit-plantonistas-grid label { min-height: 18px !important; padding: 1px !important; font-size: .58rem !important; }
 }
 
+/* O editor mantém os dois comandos de saída sempre visíveis, inclusive após a
+   grade de campos ser reconstruída depois de uma edição. */
+#edit-overlay.has-edit-fields .confirm-actions,
+#edit-overlay.has-edit-fields .panel-base-action {
+  display: flex !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+  flex: 0 0 auto !important;
+  position: relative !important;
+  z-index: 20 !important;
+}
+
+#edit-overlay.has-edit-fields .confirm-actions > button,
+#edit-overlay.has-edit-fields .panel-base-action > button {
+  display: flex !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+  min-height: 42px;
+}
+
 /* Restore the live validation colors above the premium field surfaces. */
 #entry-panel #label-form > label.is-required-empty {
   border-color: rgba(220, 38, 38, 0.42);
