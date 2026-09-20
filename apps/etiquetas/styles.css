@@ -5400,8 +5400,58 @@ body::before {
     grid-auto-rows: minmax(0, 1fr);
   }
 
-  #entry-panel.manual-entry-expanded #valor-field:not([hidden]) {
+#entry-panel.manual-entry-expanded #valor-field:not([hidden]) {
     min-height: 37px;
+  }
+}
+
+/* Final entry-grid fit: manual entry and AI reading share the same expanded
+   panel. Six columns fit every current sigla in seven rows, so the lower row
+   remains visible and touchable instead of being clipped by the form box. */
+@media (max-width: 680px) {
+  #entry-panel.manual-entry-expanded #label-form {
+    grid-template-rows: repeat(5, minmax(34px, auto)) minmax(248px, 248px) minmax(34px, auto);
+    grid-auto-rows: auto;
+    row-gap: 5px;
+    overflow: visible;
+  }
+
+  #entry-panel.manual-entry-expanded #label-form > label:has(#plantonistas-picker) {
+    min-height: 248px;
+    height: 248px;
+    overflow: visible;
+  }
+
+  #entry-panel.manual-entry-expanded #plantonistas-picker,
+  #entry-panel.manual-entry-expanded #plantonistas-options {
+    min-height: 248px;
+    height: 248px;
+    max-height: 248px;
+    overflow: visible;
+  }
+
+  #entry-panel.manual-entry-expanded #plantonistas-options {
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+    grid-template-rows: repeat(7, minmax(0, 1fr));
+    grid-auto-rows: auto;
+    gap: 4px;
+    padding: 5px;
+  }
+
+  #entry-panel.manual-entry-expanded #plantonistas-options label {
+    min-height: 31px;
+    height: auto;
+    padding: 3px 1px;
+    gap: 2px;
+    font-size: clamp(0.62rem, 2.5vw, 0.72rem);
+    line-height: 1;
+    white-space: nowrap;
+  }
+
+  #entry-panel.manual-entry-expanded #plantonistas-options input {
+    width: 14px;
+    height: 14px;
+    flex: 0 0 14px;
   }
 }
 
