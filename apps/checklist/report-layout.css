@@ -779,3 +779,49 @@ dialog.report-dialog {
 .report-dialog #incompleteSignatureBanner textarea { width:100% !important; min-height:70px !important; margin-top:8px !important; box-sizing:border-box !important; }
 .report-dialog #completeSignatureBanner .incomplete-signature-actions,
 .report-dialog #incompleteSignatureBanner .incomplete-signature-actions { display:flex !important; gap:8px !important; justify-content:flex-end !important; margin-top:8px !important; }
+
+/* Arsenal detail: keep the complete banner above the footer and the
+   responsible block, including when a lower-row arsenal is clicked. */
+dialog.report-dialog #equipmentList .equipment.has-open-status .status-banner:not([hidden]) {
+  position: fixed !important;
+  top: 50% !important;
+  left: 50% !important;
+  right: auto !important;
+  bottom: auto !important;
+  width: min(86vw, 420px) !important;
+  max-width: calc(100vw - 24px) !important;
+  max-height: min(54dvh, 360px) !important;
+  overflow: visible !important;
+  transform: translate(-50%, -50%) !important;
+  z-index: 3000 !important;
+  padding: 16px !important;
+  border: 2px solid rgba(23,98,161,.42) !important;
+  border-radius: 18px !important;
+  background: rgba(255,253,248,.99) !important;
+  box-shadow: 0 20px 42px rgba(8,18,31,.42), 0 0 0 9999px rgba(8,18,31,.22) !important;
+}
+
+dialog.report-dialog #equipmentList .equipment.has-open-status .status-banner strong {
+  display: block !important;
+  font-size: 1rem !important;
+  line-height: 1.2 !important;
+  text-align: center !important;
+}
+
+dialog.report-dialog #equipmentList .equipment.has-open-status .status-banner p {
+  font-size: .82rem !important;
+  line-height: 1.35 !important;
+  text-align: center !important;
+}
+
+@media (max-width: 430px) {
+  dialog.report-dialog #equipmentList .equipment.has-open-status .status-banner:not([hidden]) {
+    width: calc(100vw - 24px) !important;
+    max-width: calc(100vw - 24px) !important;
+    padding: 13px !important;
+  }
+
+  dialog.report-dialog #equipmentList .equipment.has-open-status .status-banner p {
+    font-size: .76rem !important;
+  }
+}
