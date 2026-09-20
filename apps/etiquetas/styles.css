@@ -6803,6 +6803,18 @@ body::before {
 #edit-overlay.edit-overlay #edit-save,
 #edit-overlay.edit-overlay .panel-home-button{display:flex!important;align-items:center!important;justify-content:center!important;text-align:center!important}
 
+/* Entrada manual: ampliar as áreas de toque das siglas aproveitando o espaço
+   livre abaixo da grade, sem ocultar nenhuma opção. */
+#entry-panel.manual-entry-expanded #label-form{grid-template-rows:repeat(5,minmax(42px,1fr)) minmax(0,252px)!important}
+#entry-panel.manual-entry-expanded #plantonistas-options{grid-template-columns:repeat(5,minmax(0,1fr))!important;grid-auto-rows:36px!important;height:252px!important;max-height:252px!important;gap:5px!important;padding:6px!important;overflow:hidden!important}
+#entry-panel.manual-entry-expanded #plantonistas-options label{display:flex!important;align-items:center!important;justify-content:center!important;min-height:36px!important;height:36px!important;padding:5px 3px!important;border-radius:10px!important;font-size:.72rem!important;font-weight:900!important;line-height:1!important;text-align:center!important}
+#entry-panel.manual-entry-expanded #plantonistas-options input{width:18px!important;height:18px!important;margin:0 4px 0 0!important}
+@media(max-width:680px){
+  #entry-panel.manual-entry-expanded #label-form{grid-template-rows:repeat(5,minmax(38px,1fr)) minmax(0,252px)!important}
+  #entry-panel.manual-entry-expanded #plantonistas-options{height:252px!important;max-height:252px!important;grid-auto-rows:36px!important;gap:5px!important}
+  #entry-panel.manual-entry-expanded #plantonistas-options label{min-height:36px!important;height:36px!important;font-size:.7rem!important}
+}
+
 /* Relatório mensal: o rodapé é uma linha própria do modal e não pode ser
    coberto pela lista ou pelo botão de geração do relatório. */
 #monthly-panel.is-open{display:grid!important;grid-template-rows:auto auto minmax(0,1fr) auto!important;align-content:stretch!important;min-height:0!important;height:95dvh!important;max-height:95dvh!important;overflow:hidden!important;box-sizing:border-box!important}
