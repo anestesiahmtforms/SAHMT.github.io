@@ -72,8 +72,8 @@ window.SAHMT_CHECKLIST_CONTRACT=(await import('../checklist-contract.js')).check
   function close(id){if(id==='cameraDialog')stopCamera();$(id).close();}
   function fail(error){ notice(error.message || 'Não foi possível concluir.'); }
   const displayRecord = item => resetRecords.has(unitKey(item)) ? null : item?.record;
-  function closeArsenalActionBanner(){const dialog=$('arsenalActionDialog');if(dialog?.open)dialog.close();}
-  function openArsenalActionBanner(item){if(!canDirectRecord()||!item)return;const dialog=$('arsenalActionDialog');if(!dialog)return;current=item;$('arsenalActionTitle').textContent=unitKey(item)||String(item.id||'');dialog.showModal();dialog.focus({preventScroll:true});}
+  function closeArsenalActionBanner(){const dialog=$('arsenalActionDialog');if(!dialog)return;if(dialog.open)dialog.close();dialog.hidden=true;}
+  function openArsenalActionBanner(item){if(!canDirectRecord()||!item)return;const dialog=$('arsenalActionDialog');if(!dialog)return;current=item;$('arsenalActionTitle').textContent=unitKey(item)||String(item.id||'');dialog.hidden=false;dialog.showModal();dialog.focus({preventScroll:true});}
   function openRecordForUnit(unit,{direct=false}={}){
     stopCamera();close('cameraDialog');current=unit;if(isMaintenance(current))syncMaintenanceDay(dateKey()).add(unitKey(current));pendingRecord=null;pendingRecordMode=direct?'direct':'qr';
     $('recordForm').reset();$('recordForm').querySelector('[type=submit]').hidden=true;$('occurrenceLabel').hidden=true;$('occurrence').required=false;
