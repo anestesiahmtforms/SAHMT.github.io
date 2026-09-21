@@ -1010,3 +1010,12 @@ dialog.report-dialog #equipmentList .equipment.has-open-status .status-banner .s
   border-radius: 10px !important;
   font-size: .64rem !important;
 }
+
+
+/* Correção: responsável e assinante em linhas independentes no modal diário. */
+.report-dialog .responsible-compact{flex:0 0 auto;width:100%;min-width:0;overflow:hidden}
+.report-dialog .responsible-compact .email-label,
+.report-dialog .responsible-compact .responsible-email,
+.report-dialog .responsible-compact .signer-email{display:block;width:100%;min-width:0;max-width:100%;margin-left:0;margin-right:0;overflow-wrap:anywhere;word-break:break-word;white-space:normal}
+.report-dialog .responsible-compact .email-label{margin-top:3px;line-height:1.15}
+.report-dialog .responsible-compact .signer-email{margin-top:0}
