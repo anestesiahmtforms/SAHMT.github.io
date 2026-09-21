@@ -6948,3 +6948,57 @@ body::before {
   flex: 0 0 15px !important;
   margin-right: 3px !important;
 }
+
+/* Ajuste final de entrada: havia área livre depois da grade e no rodapé do
+   bloco de Plantonista(s). Aumentamos os campos e os alvos de toque sem
+   criar rolagem nem alterar a quantidade de siglas exibidas. */
+#entry-panel.manual-entry-expanded #label-form {
+  grid-template-rows: repeat(5, minmax(37px, auto)) minmax(0, 304px) minmax(37px, auto) !important;
+  row-gap: 4px !important;
+}
+
+#entry-panel.manual-entry-expanded #label-form > label:not(:has(#plantonistas-picker)) {
+  min-height: 37px !important;
+  padding: 3px 5px !important;
+}
+
+#entry-panel.manual-entry-expanded #label-form > label:not(:has(#plantonistas-picker)) > span {
+  font-size: .68rem !important;
+  line-height: 1.1 !important;
+}
+
+#entry-panel.manual-entry-expanded #label-form > label:not(:has(#plantonistas-picker)) > input,
+#entry-panel.manual-entry-expanded #label-form > label:not(:has(#plantonistas-picker)) > select {
+  min-height: 39px !important;
+  height: 39px !important;
+  padding: 5px 8px !important;
+}
+
+#entry-panel.manual-entry-expanded #label-form > label:has(#plantonistas-picker),
+#entry-panel.manual-entry-expanded #plantonistas-picker,
+#entry-panel.manual-entry-expanded #plantonistas-options {
+  min-height: 300px !important;
+  height: 300px !important;
+  max-height: 300px !important;
+}
+
+#entry-panel.manual-entry-expanded #plantonistas-options {
+  grid-template-rows: repeat(7, 38px) !important;
+  grid-auto-rows: 38px !important;
+  gap: 5px !important;
+  padding: 6px !important;
+}
+
+#entry-panel.manual-entry-expanded #plantonistas-options label {
+  min-height: 38px !important;
+  height: 38px !important;
+  padding: 5px 2px !important;
+  font-size: .72rem !important;
+}
+
+#entry-panel.manual-entry-expanded #plantonistas-options input {
+  width: 17px !important;
+  height: 17px !important;
+  flex-basis: 17px !important;
+  margin-right: 4px !important;
+}
