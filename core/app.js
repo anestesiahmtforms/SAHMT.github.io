@@ -10,13 +10,19 @@ const names={offline:'Escala/Férias OFF LINE',home:'SAHMT',eventos:'Operacional
 const pages=new Map(),pendingPages=new Map(),vendors=new Map(),definitions=new Map();let current=null,sequence=0,accountGeneration=0,lastRequested=null;
 const shellState=document.getElementById('shell-state'),status=document.getElementById('shell-status'),retry=document.getElementById('shell-retry');
 const root=document.getElementById('app');
+const bootScreen=document.getElementById('boot-screen'),bootMessage=document.getElementById('boot-message');
+let bootFinished=false;
+function finishBoot(message=''){if(bootFinished)return;bootFinished=true;if(message&&bootMessage)bootMessage.textContent=message;if(bootScreen)bootScreen.hidden=true;}
+const bootSlowTimer=setTimeout(()=>{if(!bootFinished&&bootMessage)bootMessage.textContent='Ainda carregando. Verifique sua conexão e aguarde…';},8000);
+
 function routeFor(url){return url.origin===base.origin&&url.pathname.startsWith(base.pathname)?routes[url.pathname.slice(base.pathname.length)]:undefined;}
 function desiredURL(){const url=new URL(base);const hash=location.hash.slice(1);if(hash.startsWith('/'))return new URL(hash.slice(1),base);return new URL('index.html'+location.search,base);}
 function routeURL(url){return '#/'+url.pathname.slice(base.pathname.length)+url.search;}
+function fetchWithTimeout(input,timeoutMs=12000){const controller=new AbortController();const timer=setTimeout(()=>controller.abort(),timeoutMs);return fetch(input,{signal:controller.signal}).finally(()=>clearTimeout(timer)).catch(error=>{if(error.name==='AbortError')throw new Error('O aplicativo demorou a carregar. Verifique sua conexão e tente novamente.');throw error;});}
 async function vendor(src){const url=new URL(src,base).href;if(!vendors.has(url)){vendors.set(url,new Promise((resolve,reject)=>{const s=document.createElement('script');const fail=()=>{clearTimeout(timer);vendors.delete(url);s.remove();reject(new Error('Não foi possível carregar o recurso de PDF. Tente novamente.'));};const timer=setTimeout(fail,15000);s.src=url;s.onload=()=>{clearTimeout(timer);resolve();};s.onerror=fail;document.head.append(s);}));}return vendors.get(url);}
 async function definition(id){
   if(!definitions.has(id))definitions.set(id,Promise.all([
-    fetch(new URL(`views/${id}.json`,import.meta.url)).then(r=>{if(!r.ok)throw new Error('Não foi possível carregar esta área.');return r.json();}),
+    fetchWithTimeout(new URL(`views/${id}.json`,import.meta.url),12000).then(r=>{if(!r.ok)throw new Error('Não foi possível carregar esta área.');return r.json();}),
     import(`./views/${id}.js`)
   ]).then(([spec,mod])=>({spec,mod})).catch(error=>{definitions.delete(id);throw error;}));
   return definitions.get(id);
@@ -51,7 +57,7 @@ async function mountPage(id,url){
   try{prepareVendors(id).catch(()=>{});await mod.mount(page.ctx);if(generation!==accountGeneration)throw new Error('A conta foi alterada. Abra esta área novamente.');pages.set(id,page);updateUser(page);return page;}
   catch(error){page.ctx.dispose();throw error;}
 }
-function showError(error){shellState.hidden=false;status.textContent=error?.message||'Não foi possível abrir esta área.';status.hidden=false;retry.hidden=false;}
+function showError(error){finishBoot();shellState.hidden=false;status.textContent=error?.message||'Não foi possível abrir esta área.';status.hidden=false;retry.hidden=false;}
 export async function navigate(input,{replace=false,fromHistory=false}={}){
   const url=new URL(input,base),id=routeFor(url);if(!id){location.assign(url.href);return;}
   // Never carry credentials in application URLs.
@@ -63,7 +69,7 @@ export async function navigate(input,{replace=false,fromHistory=false}={}){
     const page=await loadPage(id,url);if(ticket!==sequence){if(current!==page)page.ctx.deactivate();return;}
     if(current&&current!==page)current.ctx.deactivate();current=page;page.ctx.activate(url);updateUser(page);
     if(!fromHistory){const target=routeURL(url);if(location.hash!==target)history[replace?'replaceState':'pushState']({},'',target);}
-    document.title=names[id]+' — SAHMT';status.hidden=true;preloadViews();
+    document.title=names[id]+' — SAHMT';status.hidden=true;finishBoot();clearTimeout(bootSlowTimer);preloadViews();
   }catch(error){if(ticket===sequence)showError(error);}
   finally{clearTimeout(loading);}
 }
