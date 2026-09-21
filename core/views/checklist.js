@@ -52,7 +52,7 @@ window.SAHMT_CHECKLIST_CONTRACT=(await import('../checklist-contract.js')).check
   function selectedSignatureReason(groupId){return $(groupId)?.dataset.selectedReason || '';}
   function setSignatureReason(groupId,reason=''){const group=$(groupId);if(!group)return;group.dataset.selectedReason=SIGNATURE_REASONS.includes(reason)?reason:'';group.querySelectorAll('[data-signature-reason]').forEach(button=>{const active=button.dataset.signatureReason===group.dataset.selectedReason;button.setAttribute('aria-pressed',String(active));button.disabled=group.dataset.signed==='true';});}
   function signatureReason(signature){if(SIGNATURE_REASONS.includes(signature?.reason))return signature.reason;const raw=String(signature?.justification || '');return SIGNATURE_REASONS.find(reason=>raw===reason||raw.startsWith(reason+' —')||raw.startsWith(reason+' -')) || '';}
-  function signatureDescription(signature){const raw=String(signature?.description || signature?.justification || ''),reason=signatureReason(signature);if(!reason)return raw;return raw.replace(new RegExp('^'+reason+'\\\\s*[—-]\\\\s*'),'');}
+  function signatureDescription(signature){const raw=String(signature?.description || signature?.justification || ''),reason=signatureReason(signature);if(!reason)return raw;for(const separator of [' — ',' - '])if(raw.startsWith(reason+separator))return raw.slice((reason+separator).length);return raw;}
   function composeSignatureJustification(reason,description=''){return description?reason+' — '+description:reason;}
   function rememberPendingSignature(day,signature){if(day&&signature?.email)pendingSignatures.set(String(day),{...signature});}
   function mergePendingSignature(data){
