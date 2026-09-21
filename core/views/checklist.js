@@ -129,35 +129,9 @@ window.SAHMT_CHECKLIST_CONTRACT=(await import('../checklist-contract.js')).check
     return decode(video,video.videoWidth,video.videoHeight,true);
   }
   async function startCamera(){
-    if(!navigator.mediaDevices?.getUserMedia) throw new Error('A câmera exige HTTPS e permissão do navegador. Use a leitura de uma foto.');
     if(!window.ZXing) throw new Error('Não foi possível carregar o leitor. Atualize a página.');
-    stopCamera();scanning=true;
-    try {
-      const acquired=await navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:'environment'},width:{ideal:1280},height:{ideal:720}},audio:false});
-      if(!scanning){acquired.getTracks().forEach(track=>track.stop());return;}
-      stream=acquired;
-      const track=stream.getVideoTracks()[0];
-      if(track?.applyConstraints) track.applyConstraints({advanced:[{focusMode:'continuous'}]}).catch(()=>{});
-      $('video').srcObject=stream;$('cameraDialog').showModal();await $('video').play();
-      let lastQr='',stableReads=0,detecting=false;
-      const tick=async()=>{
-        if(!scanning||detecting)return;
-        try{
-          const v=$('video');
-          if(v.readyState>=2&&v.videoWidth>0){
-            detecting=true;
-            const qr=await detectCameraFrame(v);
-            if(qr){
-              if(qr===lastQr)stableReads+=1;else{lastQr=qr;stableReads=1;}
-              if(stableReads>=2){identify(qr).catch(fail);return;}
-            }else{lastQr='';stableReads=0;}
-          }
-        }catch(error){stopCamera();close('cameraDialog');fail(error);return;}
-        finally{detecting=false;}
-        if(scanning)setTimeout(tick,180);
-      };
-      tick();
-    }catch(error){stopCamera();throw new Error(error.name==='NotAllowedError'?'Permita o acesso à câmera ou use uma foto do QR Code.':error.message);}
+    const input=$('photo');if(!input)throw new Error('Seletor de imagem indisponível.');
+    input.value='';input.click();
   }  function addText(parent,tag,text){const node=document.createElement(tag);node.textContent=text;parent.append(node);return node;}
   function normalizedEmail(value){return String(value || '').trim().toLowerCase();}
   function signatureState(responsible,signature){
