@@ -15,7 +15,7 @@ export async function registerPwa({base,sw=globalThis.navigator?.serviceWorker,d
     if(available&&!offered){
       offered=true;
       status.textContent='Uma nova versão do aplicativo está disponível.';
-      dialog.showModal();
+      if(dialog)dialog.hidden=false;dialog.showModal();
     }
   };
   sw.addEventListener('controllerchange',()=>{
@@ -24,9 +24,9 @@ export async function registerPwa({base,sw=globalThis.navigator?.serviceWorker,d
     finishActivation?.();
     offer();
   });
-  globalThis.SAHMT_PWA_READY=()=>{appReady=true;dialog?.removeAttribute('data-startup-locked');offer();};
+  globalThis.SAHMT_PWA_READY=()=>{appReady=true;dialog?.removeAttribute('data-startup-locked');if(dialog)dialog.hidden=false;offer();};
   reg=await sw.register(new URL('service-worker.js',base),{scope:base.href,updateViaCache:'none'});
-  if(appReady){dialog?.removeAttribute('data-startup-locked');}
+  if(appReady){dialog?.removeAttribute('data-startup-locked');if(dialog)dialog.hidden=false;}
   const watch=worker=>worker?.addEventListener('statechange',offer);
   watch(reg.installing);reg.addEventListener('updatefound',()=>watch(reg.installing));offer();
   button.onclick=()=>{};
