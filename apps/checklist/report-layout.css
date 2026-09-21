@@ -215,6 +215,36 @@ dialog.report-dialog #equipmentList .equipment.has-open-status .status-banner .s
   font-size: .64rem !important;
 }
 
+/* O cartão usa exatamente a largura do botão que originou o clique. */
+dialog.report-dialog #equipmentList .equipment.has-open-status .status-banner:not([hidden]) {
+  width: var(--status-banner-width) !important;
+  min-width: var(--status-banner-width) !important;
+  max-width: var(--status-banner-width) !important;
+}
+
+dialog.report-dialog #equipmentList .arsenal-icon {
+  flex-direction: column !important;
+  gap: 2px !important;
+}
+
+dialog.report-dialog #equipmentList .arsenal-status-meta {
+  display: block !important;
+  width: 100% !important;
+  max-width: 100% !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  white-space: nowrap !important;
+  font-size: .48rem !important;
+  font-weight: 850 !important;
+  line-height: 1.05 !important;
+  letter-spacing: 0 !important;
+}
+
+dialog.report-dialog #equipmentList .equipment.MANUTENCAO .arsenal-status-meta {
+  font-size: .54rem !important;
+  font-weight: 950 !important;
+}
+
 /* Ordem visual da assinatura: ação principal primeiro, alternativa discreta depois. */
 .report-dialog #responsible {
   order: 2;
