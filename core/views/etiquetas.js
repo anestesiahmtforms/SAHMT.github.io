@@ -3026,7 +3026,7 @@ function setupPlantonistasPicker() {
   panel.addEventListener("click", (event) => event.stopPropagation());
   wrapper.append(button, panel);
   const plantonistasLabel = fields.plantonistas.closest("label");
-  plantonistasLabel?.insertAdjacentElement("afterend", wrapper);
+  fields.plantonistas.insertAdjacentElement("afterend", wrapper);
 
   const valueLabel = fields.valor.closest("label");
   const valueRail = document.createElement("div");
@@ -3039,7 +3039,7 @@ function setupPlantonistasPicker() {
     valueSurface.append(valueLabel);
   }
   valueRail.append(valueSurface);
-  wrapper.insertAdjacentElement("afterend", valueRail);
+  (plantonistasLabel || wrapper).insertAdjacentElement("afterend", valueRail);
 
   plantonistasUi.wrapper = wrapper;
   plantonistasUi.button = button;
