@@ -1,3 +1,7 @@
 *{box-sizing:border-box}html,body{margin:0;min-height:100%;font-family:Manrope,system-ui,sans-serif;background:#0d3257}button{font:inherit;cursor:pointer}#shell-state{position:fixed;z-index:9999;bottom:12px;left:12px;right:12px;pointer-events:none;text-align:center}#shell-state>*:not([hidden]){display:inline-block;background:#fff;color:#0d3257;border:1px solid #d3e0e8;border-radius:12px;padding:12px;box-shadow:0 6px 20px #0003;pointer-events:auto}#shell-retry{font-weight:700}[hidden]{display:none!important}#login-gate{position:fixed;inset:0;display:grid;place-items:center;padding:24px;z-index:10000;background:#0d3257}.login-card{width:min(100%,380px);background:#fff;border-radius:24px;padding:32px;text-align:center;color:#0d3257;box-shadow:0 20px 80px #0004}.login-card h1{margin:12px}.login-card small{display:block;margin-top:24px;color:#526578}.login-card p{line-height:1.5}#google-login{display:flex;justify-content:center}dialog{width:min(92vw,580px);max-height:85vh;border:0;border-radius:20px;padding:24px;color:#0d3257}dialog::backdrop{background:#001b35b3}dialog button{padding:12px;border:1px solid #c6d6e6;background:#f4f8fb;border-radius:10px;margin:4px}dialog li{padding:12px 0;overflow-wrap:anywhere}#account-email{overflow-wrap:anywhere}
 
 #update-dialog[data-startup-locked]{display:none!important;visibility:hidden!important;pointer-events:none!important}
+
+
+/* O diálogo de atualização permanece invisível enquanto estiver bloqueado */
+#update-dialog[hidden]{display:none!important;visibility:hidden!important;pointer-events:none!important}
