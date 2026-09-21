@@ -215,6 +215,39 @@ dialog.report-dialog #equipmentList .equipment.has-open-status .status-banner .s
   font-size: .64rem !important;
 }
 
+/* Fechamento: o banner de Checar/Ativar tem exatamente as dimensões do
+   botão de origem, inclusive altura, e todo o conteúdo fica contido nele. */
+dialog.report-dialog #equipmentList .equipment.has-open-status .status-banner:not([hidden]) {
+  width: var(--status-banner-width) !important;
+  min-width: var(--status-banner-width) !important;
+  max-width: var(--status-banner-width) !important;
+  height: var(--status-banner-height) !important;
+  min-height: var(--status-banner-height) !important;
+  max-height: var(--status-banner-height) !important;
+  padding: 4px !important;
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 1px !important;
+  overflow: hidden !important;
+}
+
+dialog.report-dialog #equipmentList .equipment.has-open-status .status-banner strong {
+  margin: 0 !important;
+  font-size: .62rem !important;
+  line-height: 1 !important;
+}
+
+dialog.report-dialog #equipmentList .equipment.has-open-status .status-banner .status-check-button {
+  min-height: 24px !important;
+  height: 24px !important;
+  margin: 1px 0 0 !important;
+  padding: 3px 4px !important;
+  border-radius: 8px !important;
+  font-size: .56rem !important;
+}
+
 /* O cartão usa exatamente a largura do botão que originou o clique. */
 dialog.report-dialog #equipmentList .equipment.has-open-status .status-banner:not([hidden]) {
   width: var(--status-banner-width) !important;
