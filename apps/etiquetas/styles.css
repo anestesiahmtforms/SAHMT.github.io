@@ -7002,3 +7002,89 @@ body::before {
   flex-basis: 17px !important;
   margin-right: 4px !important;
 }
+
+/* Acabamento final do bloco de siglas e dos comandos da entrada. A grade
+   fica contida dentro do cartão de Plantonista(s); o espaço inferior passa
+   a ser usado pelos botões, sem deixar a grade vazar sobre o fundo. */
+#entry-panel.manual-entry-expanded #label-form > label:has(#plantonistas-picker),
+#entry-panel.manual-entry-expanded #plantonistas-picker {
+  box-sizing: border-box !important;
+  overflow: hidden !important;
+  border-radius: 14px !important;
+}
+
+#entry-panel.manual-entry-expanded #plantonistas-options {
+  box-sizing: border-box !important;
+  grid-template-rows: repeat(7, 36px) !important;
+  grid-auto-rows: 36px !important;
+  gap: 4px !important;
+  padding: 6px !important;
+  overflow: hidden !important;
+  align-content: start !important;
+  border-radius: 12px !important;
+}
+
+#entry-panel.manual-entry-expanded #plantonistas-options label {
+  box-sizing: border-box !important;
+  min-height: 36px !important;
+  height: 36px !important;
+  padding: 4px 2px !important;
+  border-radius: 10px !important;
+}
+
+#entry-panel.manual-entry-expanded > .actions {
+  gap: 10px !important;
+  margin-top: 2px !important;
+  padding: 10px 0 6px !important;
+}
+
+#entry-panel.manual-entry-expanded > .actions > button {
+  min-height: 58px !important;
+  padding: 13px 12px !important;
+  border-radius: 18px !important;
+  font-size: .78rem !important;
+  letter-spacing: .06em !important;
+  position: relative !important;
+  isolation: isolate !important;
+  overflow: hidden !important;
+  transform: translateY(0) !important;
+  transition: transform 160ms ease, box-shadow 160ms ease, filter 160ms ease !important;
+}
+
+#entry-panel.manual-entry-expanded > .actions > button::before {
+  content: "" !important;
+  position: absolute !important;
+  z-index: -1 !important;
+  inset: 2px 10% auto !important;
+  height: 42% !important;
+  border-radius: 999px !important;
+  background: linear-gradient(180deg, rgba(255,255,255,.72), rgba(255,255,255,0)) !important;
+  pointer-events: none !important;
+}
+
+#entry-panel.manual-entry-expanded > .actions > #send-sheet {
+  background:
+    radial-gradient(circle at 18% 0%, rgba(255,255,255,.7), transparent 32%),
+    linear-gradient(145deg, #2f87c9 0%, #1762a1 48%, #0d3257 100%) !important;
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.95),
+    inset 0 -6px 10px rgba(5,35,70,.25),
+    0 5px 0 rgba(8,50,92,.42),
+    0 16px 24px rgba(13,50,87,.24) !important;
+}
+
+#entry-panel.manual-entry-expanded > .actions > #clear-form {
+  background:
+    radial-gradient(circle at 18% 0%, rgba(255,255,255,.86), transparent 34%),
+    linear-gradient(145deg, #ffffff 0%, #e8f1f5 48%, #b9ced8 100%) !important;
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.98),
+    inset 0 -6px 10px rgba(48,87,105,.13),
+    0 5px 0 rgba(104,137,151,.42),
+    0 16px 24px rgba(20,58,78,.18) !important;
+}
+
+#entry-panel.manual-entry-expanded > .actions > button:active {
+  transform: translateY(4px) scale(.985) !important;
+  box-shadow: 0 1px 0 rgba(20,58,78,.34), inset 0 3px 8px rgba(20,58,78,.16) !important;
+}
