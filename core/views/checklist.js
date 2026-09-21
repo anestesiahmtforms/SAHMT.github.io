@@ -188,6 +188,17 @@ window.SAHMT_CHECKLIST_CONTRACT=(await import('../checklist-contract.js')).check
     button.textContent=label ? `${label}: ${email || 'E-mail não disponível.'}` : (email || 'E-mail não disponível.');
     parent.append(button);return button;
   }
+  function appendSignatureResult(parent,data,state){
+    const panel=document.createElement('section');panel.className='signature-result-panel';
+    const title=addText(panel,'strong',data.signature?.incomplete?'ASSINATURA SEM CONCLUIR':'ASSINATURA REGISTRADA');title.className='signature-result-title';
+    const expected=normalizedEmail(data.responsible?.email),signer=normalizedEmail(data.signature?.email),responsible=appendSignaturePerson(panel,state==='responsible'?'Responsável assinou':'Responsável',expected,'signature-responsible '+(state==='responsible'?'signature-ok':'signature-not-responsible'));
+    if(state==='other'){appendSignaturePerson(panel,'Assinado por',data.signature.email,'signature-other');}
+    const reason=signatureReason(data.signature);
+    if(reason){const reasonLine=document.createElement('p');reasonLine.className='signature-result-line';reasonLine.innerHTML='<strong>Justificativa escolhida:</strong> ';reasonLine.append(document.createTextNode(reason));panel.append(reasonLine);}
+    if(data.signature.incomplete){const description=signatureDescription(data.signature),descriptionLine=document.createElement('p');descriptionLine.className='signature-result-line signature-description-line';descriptionLine.innerHTML='<strong>Motivo descrito:</strong> ';descriptionLine.append(document.createTextNode(description || 'Não informado.'));panel.append(descriptionLine);}
+    const time=document.createElement('p');time.className='signature-result-time';time.textContent='Horário da assinatura: '+new Intl.DateTimeFormat('pt-BR',{timeZone:'America/Sao_Paulo',day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit',hour12:false}).format(new Date(data.signature.at)).replace(',','');panel.append(time);
+    parent.append(panel);return responsible;
+  }
   function canDirectRecord(){return Services.permission("checklistDirect");}  function closeIncompleteSignatureBanner(){const banner=$('incompleteSignatureBanner');if(!banner)return;banner.hidden=true;$('incompleteJustification').value='';$('incompleteJustification').readOnly=false;$('confirmIncompleteSignature').hidden=false;$('cancelIncompleteSignature').textContent='Cancelar';setSignatureReason('incompleteSignatureReasonGroup');}
   function openIncompleteSignatureBanner(signature){const banner=$('incompleteSignatureBanner');if(!banner)return;const signed=!!signature?.incomplete,reason=signatureReason(signature);$('incompleteSignatureTitle').textContent=signed?'Assinatura sem concluir':'Motivo da assinatura sem concluir';$('incompleteSignaturePrompt').textContent=signed?'Justificativa registrada para esta assinatura:':'Selecione a justificativa e descreva por que o checklist não foi concluído.';$('incompleteJustification').value=signed?signatureDescription(signature):'';$('incompleteJustification').readOnly=signed;$('confirmIncompleteSignature').hidden=signed;$('cancelIncompleteSignature').textContent=signed?'Fechar':'Cancelar';$('confirmIncompleteSignature').textContent='Assinar';$('incompleteSignatureReasonGroup').dataset.signed=String(signed);setSignatureReason('incompleteSignatureReasonGroup',reason);banner.hidden=false;if(!signed){$('declaration').checked=true;requestAnimationFrame(()=>$('incompleteJustification').focus());}}
   function closeCompleteSignatureBanner(){const banner=$('completeSignatureBanner');if(!banner)return;banner.hidden=true;$('confirmCompleteSignature').disabled=false;setSignatureReason('completeSignatureReasonGroup');}
@@ -201,7 +212,6 @@ window.SAHMT_CHECKLIST_CONTRACT=(await import('../checklist-contract.js')).check
     appendSignaturePerson($('responsible'),'Responsável',
       responsibleEmail || (data.responsible && data.responsible.reason) || 'Responsável indisponível.',
       'responsible-email signature-' + state);
-    if(data.signature){appendSignaturePerson($('responsible'),'Assinou',data.signature.email,'signer-email signature-signed');addText($('responsible'),'span',new Intl.DateTimeFormat('pt-BR',{timeZone:'America/Sao_Paulo',day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit',hour12:false}).format(new Date(data.signature.at)).replace(',','')).className='signature-date';}
     $('responsible').className='signature responsible-compact signature-' + state;
     $('equipmentList').replaceChildren();
     if(!data.items.length)addText($('equipmentList'),'p','A relação de unidades ainda não foi cadastrada.');
@@ -212,7 +222,7 @@ window.SAHMT_CHECKLIST_CONTRACT=(await import('../checklist-contract.js')).check
     const statusWrap=document.createElement('div');statusWrap.className='signature-status-wrap';
     if(statusText)addText(statusWrap,'p',statusText).className='signature signature-'+state;
     const incompletePending=mode==='ready';
-    if(data.signature){const resultButton=addText(statusWrap,'button',data.signature.incomplete?'Assinado sem concluir':'Assinado após concluído');resultButton.type='button';resultButton.disabled=true;resultButton.className='signature-result-button '+(data.signature.incomplete?'incomplete':'complete');if(data.signature.incomplete){const justification=document.createElement('section');justification.className='incomplete-justification-display';addText(justification,'strong','JUSTIFICATIVA');addText(justification,'p',String(data.signature.justification || 'Justificativa não informada.'));statusWrap.append(justification);}}
+    if(data.signature){appendSignatureResult(statusWrap,data,state);}
     else if(incompletePending){const incompleteButton=addText(statusWrap,'button','Assinar sem concluir');incompleteButton.type='button';incompleteButton.className='sign-incomplete-button';incompleteButton.disabled=!data.canSign;incompleteButton.setAttribute('aria-label','Assinar relatório sem concluir todos os checklists');incompleteButton.onclick=()=>openIncompleteSignatureBanner(data.signature);}
     $('reportSignActions').className='report-sign-actions mode-'+mode;
     $('signatureStatus').append(statusWrap);
