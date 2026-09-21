@@ -116,6 +116,7 @@ const plantonistasUi = {
   button: null,
   panel: null,
   checks: [],
+  valueRail: null,
 };
 
 function setCaptureButtonIdleState() {
@@ -1542,6 +1543,7 @@ function syncConditionalEntryFields() {
 
   if (conditionalFields.valor) {
     conditionalFields.valor.hidden = !needsValor;
+    plantonistasUi.valueRail?.classList.toggle("has-value-field", needsValor);
   }
   if (fields.valor) {
     fields.valor.required = false;
@@ -3023,12 +3025,27 @@ function setupPlantonistasPicker() {
 
   panel.addEventListener("click", (event) => event.stopPropagation());
   wrapper.append(button, panel);
-  fields.plantonistas.insertAdjacentElement("afterend", wrapper);
+  const plantonistasLabel = fields.plantonistas.closest("label");
+  plantonistasLabel?.insertAdjacentElement("afterend", wrapper);
+
+  const valueLabel = fields.valor.closest("label");
+  const valueRail = document.createElement("div");
+  valueRail.id = "entry-value-rail";
+  valueRail.className = "entry-value-rail";
+  const valueSurface = document.createElement("div");
+  valueSurface.className = "entry-value-rail-surface";
+  valueSurface.setAttribute("aria-hidden", "true");
+  if (valueLabel) {
+    valueSurface.append(valueLabel);
+  }
+  valueRail.append(valueSurface);
+  (plantonistasLabel || wrapper).insertAdjacentElement("afterend", valueRail);
 
   plantonistasUi.wrapper = wrapper;
   plantonistasUi.button = button;
   plantonistasUi.panel = panel;
   plantonistasUi.checks = checks;
+  plantonistasUi.valueRail = valueRail;
   syncPlantonistasFromCheckboxes();
 }
 
