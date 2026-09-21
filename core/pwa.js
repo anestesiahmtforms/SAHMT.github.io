@@ -4,7 +4,7 @@ export async function registerPwa({base,sw=globalThis.navigator?.serviceWorker,d
   if(!sw)return;
   const button=document.getElementById('shell-update'),dialog=document.getElementById('update-dialog');
   const apply=document.getElementById('update-apply'),later=document.getElementById('update-later'),status=document.getElementById('update-status');
-  dialog?.setAttribute('data-startup-locked','');
+  dialog?.setAttribute('data-startup-locked','');if(dialog)dialog.hidden=true;
   let loadedController=sw.controller,appReady=Boolean(globalThis.SAHMT_APP_READY);
   let reg,busy=false,changed=false,reloaded=false,finishActivation=null,offered=false;
   const reloadOnce=()=>{if(!reloaded){reloaded=true;reload();}};
