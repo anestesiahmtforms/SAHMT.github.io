@@ -12,7 +12,7 @@ const shellState=document.getElementById('shell-state'),status=document.getEleme
 const root=document.getElementById('app');
 const bootScreen=document.getElementById('boot-screen'),bootMessage=document.getElementById('boot-message');
 let bootFinished=false;
-function finishBoot(message=''){if(bootFinished)return;bootFinished=true;if(message&&bootMessage)bootMessage.textContent=message;if(bootScreen)bootScreen.hidden=true;}
+function finishBoot(message=''){if(bootFinished)return;bootFinished=true;if(message&&bootMessage)bootMessage.textContent=message;if(bootScreen)bootScreen.hidden=true;globalThis.SAHMT_APP_READY=true;globalThis.SAHMT_PWA_READY?.();}
 const bootSlowTimer=setTimeout(()=>{if(!bootFinished&&bootMessage)bootMessage.textContent='Ainda carregando. Verifique sua conexão e aguarde…';},8000);
 
 function routeFor(url){return url.origin===base.origin&&url.pathname.startsWith(base.pathname)?routes[url.pathname.slice(base.pathname.length)]:undefined;}
