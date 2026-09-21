@@ -19,7 +19,7 @@ window.SAHMT_CHECKLIST_CONTRACT=(await import('../checklist-contract.js')).check
   const isInactiveMaintenance = (item, day = dateKey()) => (manualMaintenance.has(unitKey(item)) || (isMaintenance(item) && !item.record && !(day === activatedMaintenanceDay && activatedMaintenance.has(unitKey(item)))));
   const numericUnitId = item => Number(unitKey(item)) || Number.MAX_SAFE_INTEGER;
   const isIsoDay = value => /^\d{4}-\d{2}-\d{2}$/.test(String(value || ''));
-  let pendingRecord = null, pendingRecordMode = 'qr', pendingSignature = null, busy = false, reportSyncTimer = null, reportSyncStartedAt = 0;
+  let pendingRecord = null, pendingRecordMode = 'qr', pendingSignature = null, pendingSignatures = new Map(), busy = false, reportSyncTimer = null, reportSyncStartedAt = 0;
   const canvas = document.createElement('canvas');
   const ctx = canvas.getContext('2d', {willReadFrequently:true});
   const dateKey = () => {const parts=new Intl.DateTimeFormat('en-US',{timeZone:'America/Sao_Paulo',year:'numeric',month:'2-digit',day:'2-digit'}).formatToParts(new Date());const values=Object.fromEntries(parts.filter(part=>part.type!=='literal').map(part=>[part.type,part.value]));return `${values.year}-${values.month}-${values.day}`;};
@@ -48,7 +48,13 @@ window.SAHMT_CHECKLIST_CONTRACT=(await import('../checklist-contract.js')).check
     return window.SAHMT_AUTH.withPayload();
   }
   function requestKey(action,payload){return action+':'+JSON.stringify(payload || {});}
-  function rememberReport(data){if(data?.day)reportCache.set(requestKey('report',{day:data.day}),{at:Date.now(),data});return data;}
+  function rememberPendingSignature(day,signature){if(day&&signature?.email)pendingSignatures.set(String(day),{...signature});}
+  function mergePendingSignature(data){
+    const day=String(data?.day||''),pending=pendingSignatures.get(day);if(!pending)return data;
+    if(data.signature){pendingSignatures.delete(day);return data;}
+    return {...data,signature:pending,canSign:false,staleSignature:false,revision:''};
+  }
+  function rememberReport(data){const merged=mergePendingSignature(data);if(merged?.day)reportCache.set(requestKey('report',{day:merged.day}),{at:Date.now(),data:merged});return merged;}
   function patchCachedReport(day,record){
     const key=requestKey('report',{day});const cached=reportCache.get(key);if(!cached?.data?.items)return;
     const data=JSON.parse(JSON.stringify(cached.data));const item=data.items.find(entry=>String(entry.id)===String(record.unitId));if(!item)return;
@@ -67,11 +73,11 @@ window.SAHMT_CHECKLIST_CONTRACT=(await import('../checklist-contract.js')).check
   }
   function applyOptimisticSignature(day,signature){
     if(report?.day!==day)return;
-    report.signature=signature;report.canSign=false;report.staleSignature=false;report.revision='';
+    rememberPendingSignature(day,signature);report.signature=signature;report.canSign=false;report.staleSignature=false;report.revision='';
   }
   async function syncSignatureInBackground(payload,day){
     try{const result=await api('sign',payload);rememberReport(result);await refreshReport(day);}
-    catch(error){await refreshReport(day);if(report?.day===day)notice('A assinatura foi iniciada, mas a confirmação demorou. Atualize o relatório antes de assinar novamente.');}
+    catch(error){pendingSignatures.delete(String(day));await refreshReport(day);if(report?.day===day)notice('A assinatura foi iniciada, mas a confirmação demorou. Atualize o relatório antes de assinar novamente.');}
   }
   async function refreshReport(day){startReportSync();try{const data=await api('report',{day},{force:true});if(report?.day===day)renderReport(data);finishReportSync();return data;}catch{failReportSync();return null;}}
   async function parseJsonResponse(response) {
@@ -86,7 +92,7 @@ window.SAHMT_CHECKLIST_CONTRACT=(await import('../checklist-contract.js')).check
       throw new Error("O serviço de dados retornou uma resposta inválida. Tente atualizar novamente.");
     }
   }
-  async function api(action,payload={},options={}){await authPayload();const result=window.SAHMT_CHECKLIST_CONTRACT(await Services.checklist(action,payload,options),action,payload);if(action==="report")rememberReport(result);return result;}
+  async function api(action,payload={},options={}){await authPayload();const result=window.SAHMT_CHECKLIST_CONTRACT(await Services.checklist(action,payload,options),action,payload);return action==="report"?rememberReport(result):result;}
   function stopCamera(){scanning=false;stream?.getTracks().forEach(track=>track.stop());stream=null;$('video').srcObject=null;}
   function close(id){if(id==='cameraDialog')stopCamera();$(id).close();}
   function fail(error){ notice(error.message || 'Não foi possível concluir.'); }
@@ -296,7 +302,7 @@ window.SAHMT_CHECKLIST_CONTRACT=(await import('../checklist-contract.js')).check
     if(!justification)throw new Error('Informe o motivo da assinatura sem concluir.');
     if(!report || !report.canSign || report.signature)return;
     $('declaration').checked=true;pendingSignature ||= crypto.randomUUID();const button=$('confirmIncompleteSignature');button.disabled=true;
-    try{const result=await api('sign',{day:report.day,revision:report.revision,accepted:true,signWithoutComplete:true,justification,requestId:pendingSignature});rememberReport(result);renderReport(result);pendingSignature=null;notice('Relatório assinado com justificativa e registrado na planilha.');}catch(error){await loadReport().catch(()=>{});throw error;}finally{button.disabled=false;}
+    try{const day=report.day,result=await api('sign',{day,revision:report.revision,accepted:true,signWithoutComplete:true,justification,requestId:pendingSignature}),signature=result?.signature||{email:session?.email || '',at:new Date().toISOString(),incomplete:true,justification};rememberPendingSignature(day,signature);const confirmed=rememberReport({...result,signature,canSign:false,staleSignature:false});renderReport(confirmed);pendingSignature=null;notice('Relatório assinado com justificativa e registrado na planilha.');}catch(error){await loadReport().catch(()=>{});throw error;}finally{button.disabled=false;}
   });  $('return').onclick=()=>{stopCamera();if(window.SAHMT_SHELL){window.SAHMT_SHELL.navigate(new URL('index.html',window.SAHMT_SHELL.base));return;}if(window.parent!==window){window.parent.postMessage({type:'sahmt-checklist-close'},cfg.parentOrigin);}else{location.href=cfg.parentOrigin+cfg.parentPath+'?skipNotice=1';}};
   function receiveSession(value){
     session=value;const slot=document.querySelector('[data-auth-user]');
