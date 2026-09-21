@@ -54,6 +54,17 @@ window.SAHMT_CHECKLIST_CONTRACT=(await import('../checklist-contract.js')).check
     const data=JSON.parse(JSON.stringify(cached.data));const item=data.items.find(entry=>String(entry.id)===String(record.unitId));if(!item)return;
     item.record={id:record.id,at:record.at,condition:record.condition,occurrence:record.occurrence,email:record.email,name:record.name};data.signature=null;data.staleSignature=true;data.revision='';reportCache.set(key,{at:Date.now(),data});
   }
+  function applyOptimisticRecord(day,record){
+    patchCachedReport(day,record);
+    if(report?.day!==day||!Array.isArray(report.items))return;
+    const item=report.items.find(entry=>String(entry.id)===String(record.unitId));if(!item)return;
+    item.record={id:record.id,at:record.at,condition:record.condition,occurrence:record.occurrence,email:record.email,name:record.name};
+    resetRecords.delete(unitKey(item));report.signature=null;report.staleSignature=true;report.revision='';
+  }
+  async function syncRecordInBackground(payload,day){
+    try{await api('record',payload);await refreshReport(day);}
+    catch(error){await refreshReport(day);notice('O registro foi enviado, mas a confirmação demorou. Atualize o relatório antes de assinar.');}
+  }
   async function refreshReport(day){startReportSync();try{const data=await api('report',{day},{force:true});if(report?.day===day)renderReport(data);finishReportSync();return data;}catch{failReportSync();return null;}}
   async function parseJsonResponse(response) {
     const body = await response.text();
@@ -243,7 +254,11 @@ window.SAHMT_CHECKLIST_CONTRACT=(await import('../checklist-contract.js')).check
     if(condition==='NAO'&&!occurrence)throw new Error('Descreva a ocorrência antes de salvar.');
     if(!['SIM','NAO'].includes(condition))throw new Error('Selecione SIM ou NÃO.');
     pendingRecord ||= crypto.randomUUID();const button=$('recordForm').querySelector('[type=submit]');button.disabled=true;
-    try{const requestId=pendingRecord;await api('record',{unitId:current.id,condition,occurrence,requestId,direct:pendingRecordMode==='direct'});const day=dateKey();patchCachedReport(day,{unitId:current.id,id:requestId,at:new Date().toISOString(),condition,occurrence,email:session.email,name:session.name || ''});pendingRecord=null;pendingRecordMode='qr';close('recordDialog');$('reportDate').value=day;openReportDialog();await loadReport();notice('Checklist registrado na planilha com sucesso.');}finally{button.disabled=false;}
+    const requestId=pendingRecord,day=dateKey(),payload={unitId:current.id,condition,occurrence,requestId,direct:pendingRecordMode==='direct'},record={unitId:current.id,id:requestId,at:new Date().toISOString(),condition,occurrence,email:session.email,name:session.name || ''};
+    if(condition==='SIM'){
+      applyOptimisticRecord(day,record);pendingRecord=null;pendingRecordMode='qr';close('recordDialog');$('reportDate').value=day;openReportDialog();if(report)renderReport(report);notice('Arsenal registrado. Sincronizando em segundo plano.');button.disabled=false;void syncRecordInBackground(payload,day);return;
+    }
+    try{await api('record',payload);patchCachedReport(day,record);pendingRecord=null;pendingRecordMode='qr';close('recordDialog');$('reportDate').value=day;openReportDialog();await loadReport();notice('Checklist registrado na planilha com sucesso.');}finally{button.disabled=false;}
   }
   $('recordForm').onchange=()=>{const no=$('recordForm').elements.condition.value==='NAO';$('occurrenceLabel').hidden=!no;$('occurrence').required=no;$('recordForm').querySelector('[type=submit]').hidden=!no;pendingRecord=null;if(!no)run(saveRecord);};
   $('recordForm').onsubmit=event=>{event.preventDefault();if($('recordForm').elements.condition.value==='NAO')run(saveRecord);};  $('report').onclick=()=>run(async()=>{const today=dateKey();lastValidReportDay=today;$('reportDate').value=today;openReportDialog();await loadReport();});
