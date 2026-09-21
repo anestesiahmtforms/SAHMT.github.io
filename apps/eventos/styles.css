@@ -3451,3 +3451,8 @@ button:hover,
 .contact-sheet { display:flex !important; flex-direction:column !important; align-items:stretch !important; justify-content:flex-start !important; margin:auto !important; width:min(95vw,560px) !important; max-width:560px !important; overflow:hidden !important; }
 .contact-sheet__header,.contact-sheet__summary,.contact-list { width:100% !important; max-width:100% !important; box-sizing:border-box !important; }
 .contact-list { min-height:0 !important; overflow-y:auto !important; overflow-x:hidden !important; }
+
+
+/* Correção: relatório mensal com rolagem interna após sair do diário. */
+.monthly-sheet{display:flex;flex-direction:column}
+.monthly-records-list{flex:1 1 auto;min-height:0;max-height:none;overflow-y:auto;overflow-x:hidden;overscroll-behavior:contain;touch-action:pan-y;-webkit-overflow-scrolling:touch}
