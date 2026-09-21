@@ -73,9 +73,9 @@ window.SAHMT_CHECKLIST_CONTRACT=(await import('../checklist-contract.js')).check
   function fail(error){ notice(error.message || 'Não foi possível concluir.'); }
   const displayRecord = item => resetRecords.has(unitKey(item)) ? null : item?.record;
   function closeArsenalActionBanner(){const dialog=$('arsenalActionDialog');if(!dialog)return;if(dialog.open)dialog.close();dialog.hidden=true;}
-  function openArsenalActionBanner(item){if(!canDirectRecord()||!item)return;const dialog=$('arsenalActionDialog');if(!dialog)return;current=item;$('arsenalActionTitle').textContent=unitKey(item)||String(item.id||'');dialog.hidden=false;dialog.showModal();dialog.focus({preventScroll:true});}
+  function openArsenalActionBanner(item){if(!canDirectRecord()||!item)return;const dialog=$('arsenalActionDialog');if(!dialog)return;current=item;dialog.dataset.unitId=unitKey(item);$('arsenalActionTitle').textContent=unitKey(item)||String(item.id||'');dialog.hidden=false;dialog.showModal();dialog.focus({preventScroll:true});}
   function openRecordForUnit(unit,{direct=false}={}){
-    stopCamera();close('cameraDialog');current=unit;if(isMaintenance(current))syncMaintenanceDay(dateKey()).add(unitKey(current));pendingRecord=null;pendingRecordMode=direct?'direct':'qr';
+    stopCamera();close('cameraDialog');current=unit;if(direct)resetRecords.delete(unitKey(current));if(isMaintenance(current))syncMaintenanceDay(dateKey()).add(unitKey(current));pendingRecord=null;pendingRecordMode=direct?'direct':'qr';
     $('recordForm').reset();$('recordForm').querySelector('[type=submit]').hidden=true;$('occurrenceLabel').hidden=true;$('occurrence').required=false;
     $('unitName').textContent=current.name;notice('');$('recordDialog').showModal();
   }
@@ -229,7 +229,7 @@ window.SAHMT_CHECKLIST_CONTRACT=(await import('../checklist-contract.js')).check
   }
   async function run(action){if(busy)return;busy=true;try{await action();}catch(error){fail(error);}finally{busy=false;}}
   $('arsenalActionClose').onclick=()=>closeArsenalActionBanner();
-  $('arsenalActionCheck').onclick=()=>{closeArsenalActionBanner();openRecordForUnit(current,{direct:true});};
+  $('arsenalActionCheck').onclick=()=>{const dialog=$('arsenalActionDialog'),key=dialog?.dataset.unitId||unitKey(current),unit=report?.items?.find(item=>unitKey(item)===key)||current;if(!unit)return;resetRecords.delete(key);closeArsenalActionBanner();openRecordForUnit(unit,{direct:true});};
   $('arsenalActionRelease').onclick=()=>{if(!current)return;const day=report?.day||dateKey();syncMaintenanceDay(day);manualMaintenance.delete(unitKey(current));if(isMaintenance(current))activatedMaintenance.add(unitKey(current));closeArsenalActionBanner();if(report)renderReport(report);};
   $('arsenalActionInactivate').onclick=()=>{if(!current)return;const day=report?.day||dateKey();syncMaintenanceDay(day);manualMaintenance.add(unitKey(current));activatedMaintenance.delete(unitKey(current));closeArsenalActionBanner();if(report)renderReport(report);};
   $('arsenalActionReset').onclick=()=>{if(!current)return;const day=report?.day||dateKey();syncMaintenanceDay(day);manualMaintenance.delete(unitKey(current));activatedMaintenance.delete(unitKey(current));resetRecords.add(unitKey(current));closeArsenalActionBanner();if(report)renderReport(report);};
