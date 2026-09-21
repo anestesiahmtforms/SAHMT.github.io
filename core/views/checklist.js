@@ -48,6 +48,12 @@ window.SAHMT_CHECKLIST_CONTRACT=(await import('../checklist-contract.js')).check
     return window.SAHMT_AUTH.withPayload();
   }
   function requestKey(action,payload){return action+':'+JSON.stringify(payload || {});}
+  const SIGNATURE_REASONS=['A pedido','Tempo limite excedido'];
+  function selectedSignatureReason(groupId){return $(groupId)?.dataset.selectedReason || '';}
+  function setSignatureReason(groupId,reason=''){const group=$(groupId);if(!group)return;group.dataset.selectedReason=SIGNATURE_REASONS.includes(reason)?reason:'';group.querySelectorAll('[data-signature-reason]').forEach(button=>{const active=button.dataset.signatureReason===group.dataset.selectedReason;button.setAttribute('aria-pressed',String(active));button.disabled=group.dataset.signed==='true';});}
+  function signatureReason(signature){if(SIGNATURE_REASONS.includes(signature?.reason))return signature.reason;const raw=String(signature?.justification || '');return SIGNATURE_REASONS.find(reason=>raw===reason||raw.startsWith(reason+' —')||raw.startsWith(reason+' -')) || '';}
+  function signatureDescription(signature){const raw=String(signature?.description || signature?.justification || ''),reason=signatureReason(signature);if(!reason)return raw;return raw.replace(new RegExp('^'+reason+'\\\\s*[—-]\\\\s*'),'');}
+  function composeSignatureJustification(reason,description=''){return description?reason+' — '+description:reason;}
   function rememberPendingSignature(day,signature){if(day&&signature?.email)pendingSignatures.set(String(day),{...signature});}
   function mergePendingSignature(data){
     const day=String(data?.day||''),pending=pendingSignatures.get(day);if(!pending)return data;
@@ -182,10 +188,10 @@ window.SAHMT_CHECKLIST_CONTRACT=(await import('../checklist-contract.js')).check
     button.textContent=label ? `${label}: ${email || 'E-mail não disponível.'}` : (email || 'E-mail não disponível.');
     parent.append(button);return button;
   }
-  function canDirectRecord(){return Services.permission("checklistDirect");}  function closeIncompleteSignatureBanner(){const banner=$('incompleteSignatureBanner');if(!banner)return;banner.hidden=true;$('incompleteJustification').value='';$('incompleteJustification').readOnly=false;$('confirmIncompleteSignature').hidden=false;$('cancelIncompleteSignature').textContent='Cancelar';}
-  function openIncompleteSignatureBanner(signature){const banner=$('incompleteSignatureBanner');if(!banner)return;const signed=!!signature?.incomplete;$('incompleteSignatureTitle').textContent=signed?'Assinatura sem concluir':'Motivo da assinatura sem concluir';$('incompleteSignaturePrompt').textContent=signed?'Justificativa registrada para esta assinatura:':'Registre o motivo de não concluir todos os checklists antes de assinar.';$('incompleteJustification').value=signed?String(signature.justification || ''):'';$('incompleteJustification').readOnly=signed;$('confirmIncompleteSignature').hidden=signed;$('cancelIncompleteSignature').textContent=signed?'Fechar':'Cancelar';$('confirmIncompleteSignature').textContent='Assinar';banner.hidden=false;if(!signed){$('declaration').checked=true;requestAnimationFrame(()=>$('incompleteJustification').focus());}}
-  function closeCompleteSignatureBanner(){const banner=$('completeSignatureBanner');if(!banner)return;banner.hidden=true;$('completeSignatureJustification').value='';$('completeSignatureJustification').hidden=true;$('confirmCompleteSignature').disabled=false;}
-  function openCompleteSignatureBanner(){if(!report||!report.canSign||report.signature)return;const banner=$('completeSignatureBanner');if(!banner)return;const responsible=normalizedEmail(report.responsible?.email),signedBy=normalizedEmail(session?.email);const other=!!responsible&&responsible!==signedBy;$('completeSignaturePrompt').textContent=other?'O responsável do dia não está assinando. Informe a justificativa para esta assinatura por outro autorizado.':'Declaro que acompanhei os checklists e tomei as providências necessárias em caso de riscos do Arsenal tecnológico/estrutural da Anestesiologia.';$('completeSignatureJustification').hidden=!other;$('completeSignatureJustification').required=other;$('completeSignatureJustification').value='';$('confirmCompleteSignature').textContent='Assinar';banner.hidden=false;if(other)requestAnimationFrame(()=>$('completeSignatureJustification').focus());}
+  function canDirectRecord(){return Services.permission("checklistDirect");}  function closeIncompleteSignatureBanner(){const banner=$('incompleteSignatureBanner');if(!banner)return;banner.hidden=true;$('incompleteJustification').value='';$('incompleteJustification').readOnly=false;$('confirmIncompleteSignature').hidden=false;$('cancelIncompleteSignature').textContent='Cancelar';setSignatureReason('incompleteSignatureReasonGroup');}
+  function openIncompleteSignatureBanner(signature){const banner=$('incompleteSignatureBanner');if(!banner)return;const signed=!!signature?.incomplete,reason=signatureReason(signature);$('incompleteSignatureTitle').textContent=signed?'Assinatura sem concluir':'Motivo da assinatura sem concluir';$('incompleteSignaturePrompt').textContent=signed?'Justificativa registrada para esta assinatura:':'Selecione a justificativa e descreva por que o checklist não foi concluído.';$('incompleteJustification').value=signed?signatureDescription(signature):'';$('incompleteJustification').readOnly=signed;$('confirmIncompleteSignature').hidden=signed;$('cancelIncompleteSignature').textContent=signed?'Fechar':'Cancelar';$('confirmIncompleteSignature').textContent='Assinar';$('incompleteSignatureReasonGroup').dataset.signed=String(signed);setSignatureReason('incompleteSignatureReasonGroup',reason);banner.hidden=false;if(!signed){$('declaration').checked=true;requestAnimationFrame(()=>$('incompleteJustification').focus());}}
+  function closeCompleteSignatureBanner(){const banner=$('completeSignatureBanner');if(!banner)return;banner.hidden=true;$('confirmCompleteSignature').disabled=false;setSignatureReason('completeSignatureReasonGroup');}
+  function openCompleteSignatureBanner(){if(!report||!report.canSign||report.signature)return;const banner=$('completeSignatureBanner');if(!banner)return;const responsible=normalizedEmail(report.responsible?.email),signedBy=normalizedEmail(session?.email),other=!!responsible&&responsible!==signedBy;$('completeSignaturePrompt').textContent=other?'O responsável do dia não está assinando. Selecione a justificativa desta assinatura.':'Declaro que acompanhei os checklists e tomei as providências necessárias em caso de riscos do Arsenal tecnológico/estrutural da Anestesiologia.';$('completeSignatureReasonGroup').hidden=!other;setSignatureReason('completeSignatureReasonGroup');$('confirmCompleteSignature').textContent='Assinar';banner.hidden=false;}
   function renderReport(data){
     data=window.SAHMT_CHECKLIST_CONTRACT(data,'report');
     if(!data.responsible && report && report.day===data.day)data.responsible=report.responsible;
@@ -262,6 +268,7 @@ window.SAHMT_CHECKLIST_CONTRACT=(await import('../checklist-contract.js')).check
   $('scanSymbol').onclick=()=>run(startCamera);
   $('photo').onchange=()=>run(async()=>{const file=$('photo').files[0];if(!file)return;try{const bitmap=await createImageBitmap(file);let qr;try{qr=decode(bitmap,bitmap.width,bitmap.height);}finally{bitmap.close();}if(!qr)throw new Error('QR Code não identificado. Fotografe de frente, com boa iluminação.');await identify(qr);}finally{$('photo').value='';}});
   document.querySelectorAll('[data-close]').forEach(button=>button.onclick=()=>close(button.dataset.close));
+  document.querySelectorAll('[data-signature-reason]').forEach(button=>button.onclick=()=>{const group=button.closest('.signature-reason-group');if(group?.dataset.signed==='true')return;setSignatureReason(group.id,button.dataset.signatureReason);});
   $('cameraDialog').addEventListener('cancel',stopCamera);document.addEventListener('visibilitychange',()=>{if(document.hidden){stopCamera();close('cameraDialog');}});
   async function saveRecord(){
     const condition=$('recordForm').elements.condition.value;const occurrence=condition==='NAO'?$('occurrence').value.trim():'';
@@ -288,21 +295,22 @@ window.SAHMT_CHECKLIST_CONTRACT=(await import('../checklist-contract.js')).check
   $('cancelCompleteSignature').onclick=()=>closeCompleteSignatureBanner();
   $('confirmCompleteSignature').onclick=()=>run(async()=>{
     if(!report||!report.canSign||report.signature)return;
-    const responsible=normalizedEmail(report.responsible?.email),signedBy=normalizedEmail(session?.email),other=!!responsible&&responsible!==signedBy,justification=$('completeSignatureJustification').value.trim();
-    if(other&&!justification)throw new Error('Informe a justificativa desta assinatura.');
+    const responsible=normalizedEmail(report.responsible?.email),signedBy=normalizedEmail(session?.email),other=!!responsible&&responsible!==signedBy,reason=selectedSignatureReason('completeSignatureReasonGroup');
+    if(other&&!reason)throw new Error('Selecione uma justificativa para esta assinatura.');
     pendingSignature ||= crypto.randomUUID();
-    const requestId=pendingSignature,day=report.day,payload={day,revision:report.revision,accepted:true,justification,requestId},signature={email:session?.email || '',at:new Date().toISOString(),incomplete:false,justification};
+    const requestId=pendingSignature,day=report.day,at=new Date().toISOString(),justification=other?reason:'',payload={day,revision:report.revision,accepted:true,justification,signatureReason:reason,signedAt:at,requestId},signature={email:session?.email || '',at,incomplete:false,justification,reason};
     const button=$('confirmCompleteSignature');button.disabled=true;
-    applyOptimisticSignature(day,signature);pendingSignature=null;closeCompleteSignatureBanner();renderReport(report);notice('Relatório assinado. Sincronizando em segundo plano.');button.disabled=false;
+    applyOptimisticSignature(day,signature);pendingSignature=null;closeCompleteSignatureBanner();renderReport(report);notice('Relatório assinado às '+new Intl.DateTimeFormat('pt-BR',{timeZone:'America/Sao_Paulo',hour:'2-digit',minute:'2-digit',hour12:false}).format(new Date(at))+'. Sincronizando em segundo plano.');button.disabled=false;
     void syncSignatureInBackground(payload,day);
   });
   $('cancelIncompleteSignature').onclick=()=>closeIncompleteSignatureBanner();
   $('confirmIncompleteSignature').onclick=()=>run(async()=>{
-    const justification=$('incompleteJustification').value.trim();
-    if(!justification)throw new Error('Informe o motivo da assinatura sem concluir.');
+    const reason=selectedSignatureReason('incompleteSignatureReasonGroup'),description=$('incompleteJustification').value.trim();
+    if(!reason)throw new Error('Selecione uma justificativa para a assinatura.');
+    if(!description)throw new Error('Descreva por que o checklist não foi concluído.');
     if(!report || !report.canSign || report.signature)return;
-    $('declaration').checked=true;pendingSignature ||= crypto.randomUUID();const button=$('confirmIncompleteSignature');button.disabled=true;
-    try{const day=report.day,result=await api('sign',{day,revision:report.revision,accepted:true,signWithoutComplete:true,justification,requestId:pendingSignature}),signature=result?.signature||{email:session?.email || '',at:new Date().toISOString(),incomplete:true,justification};rememberPendingSignature(day,signature);const confirmed=rememberReport({...result,signature,canSign:false,staleSignature:false});renderReport(confirmed);pendingSignature=null;notice('Relatório assinado com justificativa e registrado na planilha.');}catch(error){await loadReport().catch(()=>{});throw error;}finally{button.disabled=false;}
+    const justification=composeSignatureJustification(reason,description);$('declaration').checked=true;pendingSignature ||= crypto.randomUUID();const button=$('confirmIncompleteSignature');button.disabled=true;
+    try{const day=report.day,at=new Date().toISOString(),result=await api('sign',{day,revision:report.revision,accepted:true,signWithoutComplete:true,justification,signatureReason:reason,signatureDescription:description,signedAt:at,requestId:pendingSignature}),signature=result?.signature||{email:session?.email || '',at,incomplete:true,justification,reason,description};rememberPendingSignature(day,signature);const confirmed=rememberReport({...result,signature,canSign:false,staleSignature:false});renderReport(confirmed);pendingSignature=null;notice('Relatório assinado com justificativa e registrado na planilha.');}catch(error){await loadReport().catch(()=>{});throw error;}finally{button.disabled=false;}
   });  $('return').onclick=()=>{stopCamera();if(window.SAHMT_SHELL){window.SAHMT_SHELL.navigate(new URL('index.html',window.SAHMT_SHELL.base));return;}if(window.parent!==window){window.parent.postMessage({type:'sahmt-checklist-close'},cfg.parentOrigin);}else{location.href=cfg.parentOrigin+cfg.parentPath+'?skipNotice=1';}};
   function receiveSession(value){
     session=value;const slot=document.querySelector('[data-auth-user]');
