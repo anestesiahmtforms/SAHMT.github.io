@@ -245,7 +245,8 @@ window.SAHMT_CHECKLIST_CONTRACT=(await import('../checklist-contract.js')).check
   lastValidReportDay=dateKey();$('reportDate').value=lastValidReportDay;
   if($('monthly'))$('monthly').onclick=()=>run(async()=>{$('reportMonth').value=dateKey().slice(0,7);$('monthlyDialog').showModal();await loadMonthly();});
   $('reportMonth').onchange=()=>run(loadMonthly);
-  $('signForm').onsubmit=event=>{event.preventDefault();if(!$('declaration').checked || !report || $('sign').disabled)return;openCompleteSignatureBanner();};
+  $('sign').onclick=event=>{event.preventDefault();if(!report || !report.canSign || report.signature || $('sign').disabled)return;openCompleteSignatureBanner();};
+  $('signForm').onsubmit=event=>{event.preventDefault();if(!report || $('sign').disabled)return;openCompleteSignatureBanner();};
   $('cancelCompleteSignature').onclick=()=>closeCompleteSignatureBanner();
   $('confirmCompleteSignature').onclick=()=>run(async()=>{if(!report||!report.canSign||report.signature)return;const responsible=normalizedEmail(report.responsible?.email),signedBy=normalizedEmail(session?.email),other=!!responsible&&responsible!==signedBy,justification=$('completeSignatureJustification').value.trim();if(other&&!justification)throw new Error('Informe a justificativa desta assinatura.');pendingSignature ||= crypto.randomUUID();const button=$('confirmCompleteSignature');button.disabled=true;try{const result=await api('sign',{day:report.day,revision:report.revision,accepted:true,justification,requestId:pendingSignature});rememberReport(result);renderReport(result);pendingSignature=null;notice('Relatório diário assinado e registrado na planilha.');}catch(error){await loadReport().catch(()=>{});throw error;}finally{button.disabled=false;}});
   $('cancelIncompleteSignature').onclick=()=>closeIncompleteSignatureBanner();
