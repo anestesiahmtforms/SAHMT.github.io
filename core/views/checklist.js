@@ -65,6 +65,14 @@ window.SAHMT_CHECKLIST_CONTRACT=(await import('../checklist-contract.js')).check
     try{await api('record',payload);await refreshReport(day);}
     catch(error){await refreshReport(day);notice('O registro foi enviado, mas a confirmação demorou. Atualize o relatório antes de assinar.');}
   }
+  function applyOptimisticSignature(day,signature){
+    if(report?.day!==day)return;
+    report.signature=signature;report.canSign=false;report.staleSignature=false;report.revision='';
+  }
+  async function syncSignatureInBackground(payload,day){
+    try{const result=await api('sign',payload);rememberReport(result);await refreshReport(day);}
+    catch(error){await refreshReport(day);if(report?.day===day)notice('A assinatura foi iniciada, mas a confirmação demorou. Atualize o relatório antes de assinar novamente.');}
+  }
   async function refreshReport(day){startReportSync();try{const data=await api('report',{day},{force:true});if(report?.day===day)renderReport(data);finishReportSync();return data;}catch{failReportSync();return null;}}
   async function parseJsonResponse(response) {
     const body = await response.text();
@@ -272,7 +280,16 @@ window.SAHMT_CHECKLIST_CONTRACT=(await import('../checklist-contract.js')).check
   $('sign').onclick=event=>{event.preventDefault();if(!report || !report.canSign || report.signature || $('sign').disabled)return;openCompleteSignatureBanner();};
   $('signForm').onsubmit=event=>{event.preventDefault();if(!report || $('sign').disabled)return;openCompleteSignatureBanner();};
   $('cancelCompleteSignature').onclick=()=>closeCompleteSignatureBanner();
-  $('confirmCompleteSignature').onclick=()=>run(async()=>{if(!report||!report.canSign||report.signature)return;const responsible=normalizedEmail(report.responsible?.email),signedBy=normalizedEmail(session?.email),other=!!responsible&&responsible!==signedBy,justification=$('completeSignatureJustification').value.trim();if(other&&!justification)throw new Error('Informe a justificativa desta assinatura.');pendingSignature ||= crypto.randomUUID();const button=$('confirmCompleteSignature');button.disabled=true;try{const result=await api('sign',{day:report.day,revision:report.revision,accepted:true,justification,requestId:pendingSignature});rememberReport(result);renderReport(result);pendingSignature=null;notice('Relatório diário assinado e registrado na planilha.');}catch(error){await loadReport().catch(()=>{});throw error;}finally{button.disabled=false;}});
+  $('confirmCompleteSignature').onclick=()=>run(async()=>{
+    if(!report||!report.canSign||report.signature)return;
+    const responsible=normalizedEmail(report.responsible?.email),signedBy=normalizedEmail(session?.email),other=!!responsible&&responsible!==signedBy,justification=$('completeSignatureJustification').value.trim();
+    if(other&&!justification)throw new Error('Informe a justificativa desta assinatura.');
+    pendingSignature ||= crypto.randomUUID();
+    const requestId=pendingSignature,day=report.day,payload={day,revision:report.revision,accepted:true,justification,requestId},signature={email:session?.email || '',at:new Date().toISOString(),incomplete:false,justification};
+    const button=$('confirmCompleteSignature');button.disabled=true;
+    applyOptimisticSignature(day,signature);pendingSignature=null;closeCompleteSignatureBanner();renderReport(report);notice('Relatório assinado. Sincronizando em segundo plano.');button.disabled=false;
+    void syncSignatureInBackground(payload,day);
+  });
   $('cancelIncompleteSignature').onclick=()=>closeIncompleteSignatureBanner();
   $('confirmIncompleteSignature').onclick=()=>run(async()=>{
     const justification=$('incompleteJustification').value.trim();
