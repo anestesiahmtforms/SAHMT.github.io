@@ -124,9 +124,9 @@ function setCaptureButtonIdleState() {
     return;
   }
   const label = captureButton.querySelector("span");
-  if (label) label.textContent = "Abrir camera";
-  else captureButton.textContent = "Abrir camera";
-  captureButton.setAttribute("aria-label", "Abrir camera");
+  if (label) label.textContent = "Escolher foto";
+  else captureButton.textContent = "Escolher foto";
+  captureButton.setAttribute("aria-label", "Escolher foto da etiqueta");
   captureButton.disabled = false;
 }
 
@@ -587,61 +587,8 @@ function saveAiHealthCache(health) {
 function registerServiceWorker(){}
 
 async function startCamera() {
-  if (state.cameraStarting || state.stream) return;
-  stopCamera();
-  const requestId = state.cameraRequestId;
-  state.cameraStarting = true;
-  resetScannerView();
-  document.querySelector("#capture-image").disabled = true;
-  setStatus("Abrindo camera…", "info");
-  try {
-    const stream = await navigator.mediaDevices.getUserMedia({
-      video: {
-        facingMode: { ideal: "environment" },
-        width: { ideal: 2560 },
-        height: { ideal: 1440 },
-        frameRate: { ideal: 30, max: 30 },
-      },
-      audio: false,
-    });
-    // A permission prompt may finish after the user leaves this screen.
-    if (requestId !== state.cameraRequestId) {
-      stream.getTracks().forEach(track => track.stop());
-      return;
-    }
-    state.stream = stream;
-    cameraEl.srcObject = stream;
-    await cameraEl.play();
-    if (requestId !== state.cameraRequestId) return;
-    const track = stream.getVideoTracks()[0];
-    try {
-      if (track?.getCapabilities?.().focusMode?.includes("continuous")) {
-        await track.applyConstraints({ advanced: [{ focusMode: "continuous" }] });
-      }
-    } catch (error) {
-      // Keep the camera's native focus behavior if optional control is rejected.
-      console.warn("Foco automatico mantido pelo aparelho:", error);
-    }
-    if (requestId !== state.cameraRequestId) return;
-    setCaptureButtonReadyState();
-    if (cameraStatusEl) {
-      cameraStatusEl.textContent = "Camera ativa";
-      cameraStatusEl.className = "status-pill";
-    }
-    setStatus("Centralize a etiqueta. Aguarde a imagem ficar nitida antes de capturar.", "info");
-  } catch (error) {
-    if (requestId !== state.cameraRequestId) return;
-    stopCamera();
-    if (cameraStatusEl) {
-      cameraStatusEl.textContent = "Sem acesso";
-      cameraStatusEl.className = "status-pill error";
-    }
-    setStatus(`Nao foi possivel abrir a camera: ${error.message}`, "error");
-  } finally {
-    if (requestId === state.cameraRequestId) state.cameraStarting = false;
-  }
+  openNativeCameraCapture();
 }
-
 function openNativeCameraCapture() {
   const input = document.querySelector("#upload-image");
   if (input) {
@@ -654,12 +601,7 @@ function openNativeCameraCapture() {
 
 async function handleCameraCaptureButton() {
   if (state.cameraStarting) return;
-  if (state.stream) {
-    await captureFromCamera();
-    return;
-  }
-
-  await startCamera();
+  openNativeCameraCapture();
 }
 
 function stopCamera() {
