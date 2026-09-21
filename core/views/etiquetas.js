@@ -3039,7 +3039,7 @@ function setupPlantonistasPicker() {
     valueSurface.append(valueLabel);
   }
   valueRail.append(valueSurface);
-  (plantonistasLabel || wrapper).insertAdjacentElement("afterend", valueRail);
+  wrapper.insertAdjacentElement("afterend", valueRail);
 
   plantonistasUi.wrapper = wrapper;
   plantonistasUi.button = button;
