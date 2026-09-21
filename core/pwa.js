@@ -5,9 +5,18 @@ export async function registerPwa({base,sw=globalThis.navigator?.serviceWorker,d
   const button=document.getElementById('shell-update'),dialog=document.getElementById('update-dialog');
   const apply=document.getElementById('update-apply'),later=document.getElementById('update-later'),status=document.getElementById('update-status');
   let loadedController=sw.controller;
-  let reg,busy=false,changed=false,reloaded=false,finishActivation=null;
+  let reg,busy=false,changed=false,reloaded=false,finishActivation=null,offered=false;
   const reloadOnce=()=>{if(!reloaded){reloaded=true;reload();}};
-  const offer=()=>{if(!reg||busy)return;button.hidden=!(reg.waiting||changed);button.textContent=changed?'Recarregar aplicativo':'Atualizar aplicativo';};
+  const offer=()=>{
+    if(!reg||busy)return;
+    const available=Boolean(reg.waiting||changed);
+    button.hidden=true;
+    if(available&&!offered){
+      offered=true;
+      status.textContent='Uma nova versão do aplicativo está disponível.';
+      dialog.showModal();
+    }
+  };
   sw.addEventListener('controllerchange',()=>{
     if(!loadedController)loadedController=sw.controller;
     else if(sw.controller!==loadedController)changed=true;
@@ -17,7 +26,7 @@ export async function registerPwa({base,sw=globalThis.navigator?.serviceWorker,d
   reg=await sw.register(new URL('service-worker.js',base),{scope:base.href,updateViaCache:'none'});
   const watch=worker=>worker?.addEventListener('statechange',offer);
   watch(reg.installing);reg.addEventListener('updatefound',()=>watch(reg.installing));offer();
-  button.onclick=()=>{if(busy)return;status.textContent='Salve os dados em edição antes de atualizar. Sua conta e os envios pendentes serão preservados.';apply.disabled=false;later.disabled=false;dialog.showModal();};
+  button.onclick=()=>{};
   later.onclick=()=>dialog.close();
   dialog.addEventListener('cancel',event=>{if(busy)event.preventDefault();});
   apply.onclick=async()=>{
