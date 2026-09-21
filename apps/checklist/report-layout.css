@@ -176,6 +176,45 @@ dialog.report-dialog {
   }
 }
 
+/* Banner do arsenal: mesma escala visual do botão clicado, centralizado e
+   dimensionado apenas pelo texto e pela ação disponível. */
+dialog.report-dialog #equipmentList .equipment.has-open-status .status-banner:not([hidden]) {
+  position: fixed !important;
+  inset: 0 !important;
+  width: min(30vw, 154px) !important;
+  min-width: 112px !important;
+  max-width: 154px !important;
+  height: fit-content !important;
+  max-height: none !important;
+  margin: auto !important;
+  padding: 10px 8px !important;
+  overflow: hidden !important;
+  box-sizing: border-box !important;
+  transform: none !important;
+  border-radius: 14px !important;
+}
+
+dialog.report-dialog #equipmentList .equipment.has-open-status .status-banner strong {
+  font-size: .78rem !important;
+  line-height: 1.15 !important;
+}
+
+dialog.report-dialog #equipmentList .equipment.has-open-status .status-banner p {
+  margin: 5px 0 0 !important;
+  font-size: .64rem !important;
+  line-height: 1.2 !important;
+  overflow-wrap: anywhere !important;
+}
+
+dialog.report-dialog #equipmentList .equipment.has-open-status .status-banner .status-check-button {
+  width: 100% !important;
+  min-height: 34px !important;
+  margin-top: 8px !important;
+  padding: 7px 5px !important;
+  border-radius: 10px !important;
+  font-size: .64rem !important;
+}
+
 /* Ordem visual da assinatura: ação principal primeiro, alternativa discreta depois. */
 .report-dialog #responsible {
   order: 2;
@@ -824,4 +863,47 @@ dialog.report-dialog #equipmentList .equipment.has-open-status .status-banner p 
   dialog.report-dialog #equipmentList .equipment.has-open-status .status-banner p {
     font-size: .76rem !important;
   }
+}
+
+/* Override final: o banner acompanha a escala do botão do arsenal, em vez de
+   abrir como um painel quase do tamanho da tela. */
+dialog.report-dialog #equipmentList .equipment.has-open-status .status-banner:not([hidden]) {
+  position: fixed !important;
+  inset: 0 !important;
+  top: auto !important;
+  left: auto !important;
+  right: auto !important;
+  bottom: auto !important;
+  width: min(30vw, 154px) !important;
+  min-width: 112px !important;
+  max-width: 154px !important;
+  height: fit-content !important;
+  max-height: none !important;
+  margin: auto !important;
+  padding: 10px 8px !important;
+  overflow: hidden !important;
+  box-sizing: border-box !important;
+  transform: none !important;
+  border-radius: 14px !important;
+}
+
+dialog.report-dialog #equipmentList .equipment.has-open-status .status-banner strong {
+  font-size: .78rem !important;
+  line-height: 1.15 !important;
+}
+
+dialog.report-dialog #equipmentList .equipment.has-open-status .status-banner p {
+  margin: 5px 0 0 !important;
+  font-size: .64rem !important;
+  line-height: 1.2 !important;
+  overflow-wrap: anywhere !important;
+}
+
+dialog.report-dialog #equipmentList .equipment.has-open-status .status-banner .status-check-button {
+  width: 100% !important;
+  min-height: 34px !important;
+  margin-top: 8px !important;
+  padding: 7px 5px !important;
+  border-radius: 10px !important;
+  font-size: .64rem !important;
 }
