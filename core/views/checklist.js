@@ -72,7 +72,8 @@ window.SAHMT_CHECKLIST_CONTRACT=(await import('../checklist-contract.js')).check
   function close(id){if(id==='cameraDialog')stopCamera();$(id).close();}
   function fail(error){ notice(error.message || 'Não foi possível concluir.'); }
   const displayRecord = item => resetRecords.has(unitKey(item)) ? null : item?.record;
-  function closeArsenalActionBanner(){const dialog=$('arsenalActionDialog');if(!dialog)return;if(dialog.open)dialog.close();dialog.hidden=true;}
+  function activeArsenal(){const dialog=$('arsenalActionDialog'),key=dialog?.dataset.unitId||unitKey(current);const item=report?.items?.find(entry=>unitKey(entry)===key)||current;if(item)current=item;return item;}
+  function closeArsenalActionBanner(){const dialog=$('arsenalActionDialog');if(!dialog)return;if(dialog.open)dialog.close();dialog.hidden=true;dialog.dataset.unitId='';}
   function openArsenalActionBanner(item){if(!canDirectRecord()||!item)return;const dialog=$('arsenalActionDialog');if(!dialog)return;current=item;dialog.dataset.unitId=unitKey(item);$('arsenalActionTitle').textContent=unitKey(item)||String(item.id||'');dialog.hidden=false;dialog.showModal();dialog.focus({preventScroll:true});}
   function openRecordForUnit(unit,{direct=false}={}){
     stopCamera();close('cameraDialog');current=unit;if(direct)resetRecords.delete(unitKey(current));if(isMaintenance(current))syncMaintenanceDay(dateKey()).add(unitKey(current));pendingRecord=null;pendingRecordMode=direct?'direct':'qr';
@@ -228,11 +229,11 @@ window.SAHMT_CHECKLIST_CONTRACT=(await import('../checklist-contract.js')).check
     }catch(error){$('monthlySummary').textContent='Não foi possível carregar o mês.';throw error;}
   }
   async function run(action){if(busy)return;busy=true;try{await action();}catch(error){fail(error);}finally{busy=false;}}
-  $('arsenalActionClose').onclick=()=>closeArsenalActionBanner();
-  $('arsenalActionCheck').onclick=()=>{const dialog=$('arsenalActionDialog'),key=dialog?.dataset.unitId||unitKey(current),unit=report?.items?.find(item=>unitKey(item)===key)||current;if(!unit)return;resetRecords.delete(key);closeArsenalActionBanner();openRecordForUnit(unit,{direct:true});};
-  $('arsenalActionRelease').onclick=()=>{if(!current)return;const day=report?.day||dateKey();syncMaintenanceDay(day);manualMaintenance.delete(unitKey(current));if(isMaintenance(current))activatedMaintenance.add(unitKey(current));closeArsenalActionBanner();if(report)renderReport(report);};
-  $('arsenalActionInactivate').onclick=()=>{if(!current)return;const day=report?.day||dateKey();syncMaintenanceDay(day);manualMaintenance.add(unitKey(current));activatedMaintenance.delete(unitKey(current));closeArsenalActionBanner();if(report)renderReport(report);};
-  $('arsenalActionReset').onclick=()=>{if(!current)return;const day=report?.day||dateKey();syncMaintenanceDay(day);manualMaintenance.delete(unitKey(current));activatedMaintenance.delete(unitKey(current));resetRecords.add(unitKey(current));closeArsenalActionBanner();if(report)renderReport(report);};
+  $('arsenalActionClose').onclick=event=>{event.preventDefault();closeArsenalActionBanner();};
+  $('arsenalActionCheck').onclick=event=>{event.preventDefault();const unit=activeArsenal();if(!unit)return;const key=unitKey(unit);resetRecords.delete(key);closeArsenalActionBanner();openRecordForUnit(unit,{direct:true});};
+  $('arsenalActionRelease').onclick=event=>{event.preventDefault();const unit=activeArsenal();if(!unit)return;const day=report?.day||dateKey();syncMaintenanceDay(day);manualMaintenance.delete(unitKey(unit));if(isMaintenance(unit))activatedMaintenance.add(unitKey(unit));closeArsenalActionBanner();if(report)renderReport(report);};
+  $('arsenalActionInactivate').onclick=event=>{event.preventDefault();const unit=activeArsenal();if(!unit)return;const day=report?.day||dateKey();syncMaintenanceDay(day);manualMaintenance.add(unitKey(unit));activatedMaintenance.delete(unitKey(unit));closeArsenalActionBanner();if(report)renderReport(report);};
+  $('arsenalActionReset').onclick=event=>{event.preventDefault();const unit=activeArsenal();if(!unit)return;const day=report?.day||dateKey();syncMaintenanceDay(day);manualMaintenance.delete(unitKey(unit));activatedMaintenance.delete(unitKey(unit));resetRecords.add(unitKey(unit));closeArsenalActionBanner();if(report)renderReport(report);};
   $('scanSymbol').onclick=()=>run(startCamera);
   $('photo').onchange=()=>run(async()=>{const file=$('photo').files[0];if(!file)return;try{const bitmap=await createImageBitmap(file);let qr;try{qr=decode(bitmap,bitmap.width,bitmap.height);}finally{bitmap.close();}if(!qr)throw new Error('QR Code não identificado. Fotografe de frente, com boa iluminação.');await identify(qr);}finally{$('photo').value='';}});
   document.querySelectorAll('[data-close]').forEach(button=>button.onclick=()=>close(button.dataset.close));
