@@ -41,7 +41,8 @@ const {Services,localStorage,sessionStorage,document,window,navigator,location,h
   const sharedStateEndpoint = "central-service";
   const syncPollIntervalMs = Number(syncConfig.pollIntervalMs) > 0 ? Number(syncConfig.pollIntervalMs) : 20000;
   const sharedPendingTtlMs = Number(syncConfig.pendingTtlMs) > 0 ? Number(syncConfig.pendingTtlMs) : 180000;
-  const scheduleCacheStorageKey = "sahmt-scale-schedule-cache-v1";
+  const scheduleCacheStorageKey = "sahmt-scale-schedule-cache-v2";
+  const scheduleCacheTtlMs = 6 * 60 * 60 * 1000;
 
   const todayKey = formatKey(new Date());
   const siglaCheckState = loadSiglaCheckState();
@@ -299,9 +300,21 @@ const {Services,localStorage,sessionStorage,document,window,navigator,location,h
       .catch(() => {});
   }
 
-  function loadScheduleCache(){return null;}
+  function scheduleCacheKey(){const uid=String(Services.user?.uid || '').trim();return uid ? `${scheduleCacheStorageKey}:${uid}` : '';}
+  function isUsableSchedule(value){return !!value && Array.isArray(value.days) && value.days.length>0;}
+  function loadScheduleCache(){
+    const key=scheduleCacheKey();if(!key)return null;
+    try{
+      const cached=JSON.parse(window.localStorage.getItem(key)||'null');
+      if(!cached || Date.now()-Number(cached.savedAt||0)>scheduleCacheTtlMs || !isUsableSchedule(cached.value))return null;
+      return cached.value;
+    }catch{return null;}
+  }
 
-  function saveScheduleCache(){}
+  function saveScheduleCache(value){
+    const key=scheduleCacheKey();if(!key||!isUsableSchedule(value))return;
+    try{window.localStorage.setItem(key,JSON.stringify({savedAt:Date.now(),value}));}catch{}
+  }
 
   function render(dateKey) {
     elements.dateInput.value = dateKey;
