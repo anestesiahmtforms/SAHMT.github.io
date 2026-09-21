@@ -1076,7 +1076,7 @@ function collectFormData() {
     cirurgia: fields.cirurgia.value.trim(),
     atendimento: fields.atendimento.value.trim(),
     tipo,
-    valor: (shouldRequireValor(tipo) || isSadtType(tipo)) ? formatStoredCurrency(fields.valor.value) : "",
+    valor: formatStoredCurrency(fields.valor.value),
     convenio: fields.convenio.value.trim(),
     credor: fields.credor.value.trim(),
     plantonistas: isCaixa ? "" : getSelectedPlantonistasValue(),
@@ -1434,7 +1434,7 @@ function collectConfirmationPayload(basePayload) {
     tipo: normalizeTipoValue(confirmSummaryEl.querySelector("#confirm-tipo")?.value || ""),
     valor: (shouldRequireValor(confirmSummaryEl.querySelector("#confirm-tipo")?.value || "") || isSadtType(confirmSummaryEl.querySelector("#confirm-tipo")?.value || ""))
       ? formatStoredCurrency(confirmSummaryEl.querySelector("#confirm-valor")?.value || "")
-      : "",
+      : formatStoredCurrency(confirmSummaryEl.querySelector("#confirm-valor")?.value || ""),
     convenio: shouldRequireConvenio(confirmSummaryEl.querySelector("#confirm-tipo")?.value || "")
       ? (confirmSummaryEl.querySelector("#confirm-convenio")?.value.trim() || "")
       : "",
@@ -1449,7 +1449,7 @@ function getMissingRequiredFields(payload, options = {}) {
     return ["data", "nomePaciente", "atendimento", "credor"].filter((key) => !String(payload[key] || "").trim());
   }
   const {
-    requireValor = shouldRequireValor(payload.tipo),
+    requireValor = false,
     requireConvenio = true,
     requirePlantonistas = payload.credor !== CREDOR_CAIXA,
   } = options;
@@ -1500,9 +1500,6 @@ function updateEntryValidationStates(options = {}) {
     : isSadtMode()
       ? ["data", "nomePaciente", "atendimento", "tipo", "credor"]
       : ["data", "nomePaciente", "cirurgia", "atendimento", "tipo", "credor"];
-  if (shouldRequireValor(payload.tipo)) {
-    requiredKeys.push("valor");
-  }
   if (shouldRequireConvenio(payload.tipo)) {
     requiredKeys.push("convenio");
   }
@@ -1547,7 +1544,7 @@ function syncConditionalEntryFields() {
     conditionalFields.valor.hidden = !needsValor;
   }
   if (fields.valor) {
-    fields.valor.required = requiresValor;
+    fields.valor.required = false;
     if (!needsValor) {
       fields.valor.value = "";
     }
@@ -1626,7 +1623,7 @@ function syncInlineConditionalFields(root, prefix) {
   }
   if (valueEl) {
     valueEl.disabled = !needsValor;
-    valueEl.required = needsValor;
+    valueEl.required = false;
     if (!needsValor) {
       valueEl.value = "";
     }
