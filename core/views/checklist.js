@@ -103,8 +103,17 @@ window.SAHMT_CHECKLIST_CONTRACT=(await import('../checklist-contract.js')).check
   function fail(error){ notice(error.message || 'Não foi possível concluir.'); }
   const displayRecord = item => resetRecords.has(unitKey(item)) ? null : item?.record;
   function activeArsenal(){const dialog=$('arsenalActionDialog'),key=dialog?.dataset.unitId||unitKey(current);const item=report?.items?.find(entry=>unitKey(entry)===key)||current;if(item)current=item;return item;}
+  function arsenalActionStatus(item){
+    const key=unitKey(item),day=report?.day||dateKey();syncMaintenanceDay(day);
+    const record=displayRecord(item);
+    if(manualMaintenance.has(key)||(isMaintenance(item)&&!record&&!activatedMaintenance.has(key)))return {label:'Inativo',className:'status-inactive'};
+    if(activatedMaintenance.has(key))return {label:'Liberado',className:'status-released'};
+    if(record?.condition==='NAO')return {label:'Alerta de manutenção',className:'status-maintenance'};
+    if(record?.condition==='SIM')return {label:'Liberado',className:'status-released'};
+    return {label:'Não checado',className:'status-pending'};
+  }
   function closeArsenalActionBanner(){const dialog=$('arsenalActionDialog');if(!dialog)return;if(dialog.open)dialog.close();dialog.hidden=true;dialog.dataset.unitId='';}
-  function openArsenalActionBanner(item){if(!canDirectRecord()||!item)return;const dialog=$('arsenalActionDialog');if(!dialog)return;current=item;dialog.dataset.unitId=unitKey(item);$('arsenalActionTitle').textContent=unitKey(item)||String(item.id||'');dialog.hidden=false;dialog.showModal();dialog.focus({preventScroll:true});}
+  function openArsenalActionBanner(item){if(!canDirectRecord()||!item)return;const dialog=$('arsenalActionDialog');if(!dialog)return;current=item;dialog.dataset.unitId=unitKey(item);$('arsenalActionTitle').textContent=unitKey(item)||String(item.id||'');const status=arsenalActionStatus(item),statusNode=$('arsenalActionStatus');if(statusNode){statusNode.textContent=status.label;statusNode.className='arsenal-action-status '+status.className;}dialog.hidden=false;dialog.showModal();dialog.focus({preventScroll:true});}
   function openRecordForUnit(unit,{direct=false}={}){
     stopCamera();close('cameraDialog');current=unit;if(direct)resetRecords.delete(unitKey(current));if(isMaintenance(current))syncMaintenanceDay(dateKey()).add(unitKey(current));pendingRecord=null;pendingRecordMode=direct?'direct':'qr';
     $('recordForm').reset();const conditionFieldset=$('conditionFieldset'),submitButton=$('recordForm').querySelector('[type=submit]');conditionFieldset.hidden=false;document.querySelectorAll('[data-condition-choice]').forEach(button=>button.classList.remove('selected'));submitButton.textContent='Salvar registro';submitButton.hidden=true;$('occurrenceLabel').hidden=true;$('occurrence').required=false;
