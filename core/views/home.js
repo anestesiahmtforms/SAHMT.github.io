@@ -21,8 +21,8 @@ const {Services,localStorage,sessionStorage,document,window,navigator,location,h
   const skipOpeningNotice = !openingNoticeEnabled || new URLSearchParams(window.location.search).get("skipNotice") === "1";
 
   const siglaPattern = /(?:[A-Z]{2}|L2)(?:[/-](?:[A-Z]{2}|L2))*/g;
-  const contacts = Array.isArray(contactsPayload?.records) ? contactsPayload.records : [];
-  const contactsBySigla = new Map(contacts.map((contact) => [contact.sigla, contact]));
+  let contacts = Array.isArray(contactsPayload?.records) ? contactsPayload.records : [];
+  let contactsBySigla = new Map(contacts.map((contact) => [contact.sigla, contact]));
   const siglaAliases = new Map([
     ["DC", ["AD", "CR", "LA", "LH"]]
   ]);
@@ -109,11 +109,23 @@ const {Services,localStorage,sessionStorage,document,window,navigator,location,h
   // Render the local schedule immediately; authentication continues in the background.
   // This prevents a slow session restore from leaving the main page blank.
   ensureSharedAccess().catch((error) => console.warn("Falha na autenticacao inicial:", error));
+  const refreshContactsFromSession = () => {
+    Services.bootstrap().then((payload) => {
+      const records = Array.isArray(payload?.contacts) ? payload.contacts : [];
+      contacts = records;
+      contactsBySigla = new Map(records.map((contact) => [contact.sigla, contact]));
+      if (activeContactToken && !elements.contactModal.classList.contains("hidden")) {
+        renderActiveContactBanner();
+      }
+    }).catch(() => {});
+  };
   window.SAHMT_AUTH?.onChange?.(() => {
+    refreshContactsFromSession();
     if (activeContactToken && !elements.contactModal.classList.contains("hidden")) {
       openTokenDetails(activeContactToken, activeContactWeekday);
     }
   });
+  refreshContactsFromSession();
 
   if (elements.closeNoticeModal) {
     elements.closeNoticeModal.addEventListener("click", closeNoticeModal);
@@ -923,7 +935,7 @@ const {Services,localStorage,sessionStorage,document,window,navigator,location,h
   }
 
   function renderActiveContactBanner() {
-    if (!activeContactToken || elements.contactModal.classList.contains("hidden")) return;
+    if (!activeContactToken) return;
     const details = resolveTokenDetails(activeContactToken, activeContactWeekday);
     const matchedContacts = details.contacts;
     const unresolved = details.unresolved;
@@ -939,7 +951,7 @@ const {Services,localStorage,sessionStorage,document,window,navigator,location,h
   }
 
   function refreshActiveContactBanner(dateKey) {
-    if (dateKey === activeContactDate) renderActiveContactBanner();
+    if (dateKey === activeContactDate && !elements.contactModal.classList.contains("hidden")) renderActiveContactBanner();
   }
 
   function closeContactModal() {
