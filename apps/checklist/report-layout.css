@@ -1021,6 +1021,7 @@ dialog.report-dialog #incompleteSignatureBanner .incomplete-confirm { min-width:
 
 /* Resultado final abaixo dos arsenais: pessoas e estado ficam explícitos. */
 dialog.report-dialog #responsible { display:flex !important; flex-wrap:wrap !important; align-items:center !important; justify-content:center !important; gap:5px !important; }
+dialog.report-dialog #responsible[hidden] { display:none !important; }
 dialog.report-dialog #responsible>strong { flex:0 0 100% !important; }
 dialog.report-dialog #responsible .signature-person,
 dialog.report-dialog #signatureStatus .signature-result-button { display:flex !important; align-items:center !important; justify-content:center !important; min-height:34px !important; padding:7px 10px !important; border:1px solid rgba(13,50,87,.16) !important; border-radius:12px !important; font:inherit !important; font-size:.66rem !important; font-weight:850 !important; line-height:1.1 !important; text-align:center !important; overflow-wrap:anywhere !important; }

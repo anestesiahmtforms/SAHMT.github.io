@@ -222,6 +222,7 @@ window.SAHMT_CHECKLIST_CONTRACT=(await import('../checklist-contract.js')).check
     data=window.SAHMT_CHECKLIST_CONTRACT(data,'report');
     if(!data.responsible && report && report.day===data.day)data.responsible=report.responsible;
     report=data;const orderedItems=[...data.items].sort((a,b)=>Number(isInactiveMaintenance(a,data.day))-Number(isInactiveMaintenance(b,data.day)) || numericUnitId(a)-numericUnitId(b));const activeItems=orderedItems.filter(item=>!isMaintenance(item));const done=activeItems.filter(item=>item.record).length;const isToday=data.day===dateKey();const state=signatureState(data.responsible,data.signature);
+    $('responsible').hidden=!!data.signature;
     $('responsible').replaceChildren();addText($('responsible'),'strong','RESPONSÁVEL DO DIA');
     const responsibleEmail=data.responsible && data.responsible.email;
     appendSignaturePerson($('responsible'),'Responsável',
