@@ -922,6 +922,78 @@ dialog.report-dialog #signatureStatus .incomplete-justification-display { width:
 dialog.report-dialog #signatureStatus .incomplete-justification-display strong { display:block !important; font-size:.62rem !important; text-align:center !important; }
 dialog.report-dialog #signatureStatus .incomplete-justification-display p { margin:4px 0 0 !important; font-size:.66rem !important; line-height:1.25 !important; text-align:center !important; }
 
+/* Resultado persistente da assinatura: permanece no rodapé do relatório e
+   substitui as ações, sem texto de assinatura junto ao título. */
+dialog.report-dialog #reportSignActions.mode-signed-complete,
+dialog.report-dialog #reportSignActions.mode-signed-incomplete,
+dialog.report-dialog #reportSignActions.mode-history,
+dialog.report-dialog #reportSignActions.mode-stale,
+dialog.report-dialog #reportSignActions.mode-locked {
+  display:flex !important;
+  flex:0 0 auto !important;
+  flex-direction:column !important;
+  width:100% !important;
+  min-height:0 !important;
+  margin:5px 0 2px !important;
+  gap:4px !important;
+}
+dialog.report-dialog #reportSignActions.mode-signed-complete #signForm,
+dialog.report-dialog #reportSignActions.mode-signed-incomplete #signForm,
+dialog.report-dialog #reportSignActions.mode-history #signForm,
+dialog.report-dialog #reportSignActions.mode-stale #signForm,
+dialog.report-dialog #reportSignActions.mode-locked #signForm { display:none !important; }
+dialog.report-dialog #reportSignActions.mode-signed-complete #signatureStatus,
+dialog.report-dialog #reportSignActions.mode-signed-incomplete #signatureStatus,
+dialog.report-dialog #reportSignActions.mode-history #signatureStatus,
+dialog.report-dialog #reportSignActions.mode-stale #signatureStatus,
+dialog.report-dialog #reportSignActions.mode-locked #signatureStatus {
+  display:flex !important;
+  flex-direction:column !important;
+  align-items:stretch !important;
+  justify-content:center !important;
+  width:100% !important;
+  min-height:0 !important;
+  margin:0 !important;
+}
+dialog.report-dialog #reportSignActions .signature-status-wrap {
+  display:flex !important;
+  flex-direction:column !important;
+  align-items:stretch !important;
+  gap:4px !important;
+  width:100% !important;
+  min-height:0 !important;
+}
+dialog.report-dialog #responsible .signature-person.signature-responsible {
+  background:#e8f7ed !important;color:#166534 !important;border-color:#73be8b !important;
+}
+dialog.report-dialog #responsible .signature-person.signature-other,
+dialog.report-dialog #responsible .signature-person.signature-pending {
+  background:#fff0f0 !important;color:#b4232b !important;border-color:#e3a0a0 !important;
+}
+dialog.report-dialog #responsible .signature-person.signer-email {
+  background:#e8f7ed !important;color:#166534 !important;border-color:#73be8b !important;
+}
+dialog.report-dialog #signatureStatus .signature-person {
+  display:flex !important;align-items:center !important;justify-content:center !important;
+  min-height:34px !important;width:100% !important;margin:0 !important;padding:7px 10px !important;
+  border:1px solid rgba(13,50,87,.16) !important;border-radius:12px !important;
+  font:inherit !important;font-size:.66rem !important;font-weight:850 !important;line-height:1.1 !important;
+  text-align:center !important;overflow-wrap:anywhere !important;opacity:1 !important;cursor:default !important;
+}
+dialog.report-dialog #signatureStatus .signature-person.signature-responsible {
+  background:#e8f7ed !important;color:#166534 !important;border-color:#73be8b !important;
+}
+dialog.report-dialog #signatureStatus .signature-person.signature-other,
+dialog.report-dialog #signatureStatus .signature-person.signature-pending {
+  background:#fff0f0 !important;color:#b4232b !important;border-color:#e3a0a0 !important;
+}
+dialog.report-dialog #signatureStatus .signature-person.signer-email {
+  background:#e8f7ed !important;color:#166534 !important;border-color:#73be8b !important;
+}
+dialog.report-dialog #signatureStatus .signature-date {
+  display:block !important;margin:0 !important;color:#526578 !important;font-size:.6rem !important;font-weight:800 !important;text-align:center !important;
+}
+
 /* Arsenal detail: keep the complete banner above the footer and the
    responsible block, including when a lower-row arsenal is clicked. */
 dialog.report-dialog #equipmentList .equipment.has-open-status .status-banner:not([hidden]) {
