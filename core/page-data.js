@@ -7,13 +7,14 @@ function cachedSchedule(services){
   if(!uid||!globalThis.localStorage)return null;
   try{
     const item=JSON.parse(globalThis.localStorage.getItem(`${SCHEDULE_CACHE}:${uid}`)||'null');
-    return item&&Date.now()-Number(item.savedAt||0)<=6*60*60*1000&&Array.isArray(item.value?.days)&&item.value.days.length?item.value:null;
+    return item&&Array.isArray(item.value?.days)&&item.value.days.length?item.value:null;
   }catch{return null;}
 }
 export async function pageData(id,services){
-  const [bootstrap,schedule]=await Promise.all([
-    id==='home'?(services.bootstrapData||services.bootstrap()):{contacts:[]},
-    ['home','eventos'].includes(id)?(services.store.peek('escala.list:{}')||cachedSchedule(services)||services.schedule()):null
-  ]);
+  const bootstrap=id==='home'?(services.bootstrapData||await services.bootstrap()):{contacts:[]};
+  const needsSchedule=['home','eventos'].includes(id);
+  const schedule=needsSchedule?(services.store.peek('escala.list:{}')||cachedSchedule(services)):null;
+  if(needsSchedule&&!schedule)services.schedule().catch(()=>{});
   return {bootstrap,schedule};
 }
+

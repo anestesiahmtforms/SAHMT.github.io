@@ -43,6 +43,17 @@ export class SessionManager {
     this.store.reset({initialized:true,authenticated:true,status:'validating',uid,email:identity.email||'',displayName:identity.displayName||'',
       user:cached,roles:cached?.roles||[],permissions:cached?.permissions||{},memberStatus:cached?'STALE':'PENDING',offline:!this.online(),
       ...this.trust.inspect(identity,!this.online())});
+    if(cached){
+      // A identidade Firebase e o perfil já confirmados neste aparelho bastam
+      // para abrir a interface. A autorização de cada operação continua no backend.
+      this.update({status:'authenticated',authenticated:true,user:cached,uid,email:cached.email||identity.email||'',
+        displayName:cached.name||identity.displayName||'',roles:cached.roles||[],permissions:cached.permissions||{},
+        memberStatus:'STALE',offline:!this.online(),error:''});
+      clearTimeout(this.restoreWatchdog);
+      this.resolveReady();
+      this.bootstrap().catch(()=>{});
+      return;
+    }
     try {await this.bootstrap();} catch(error) {if(generation===this.generation&&cached&&!['ACCESS_DENIED','AUTH_REAUTH_REQUIRED'].includes(error.code))this.update({status:'authenticated',memberStatus:'STALE',error:error.message});}
     finally{if(generation===this.generation){clearTimeout(this.restoreWatchdog);this.resolveReady();}}
   }
@@ -85,3 +96,4 @@ export class SessionManager {
   async resume(){this.networkChanged();if(!this.online()||!this.firebase.currentUser)return;if(this.snapshot().memberStatus!=='ACTIVE'||['TRUST_RENEWAL_PENDING','RENEWAL_DUE'].includes(this.snapshot().trustStatus))await this.bootstrap();}
   async logout(){await this.firebase.logout();return {revoked:true};}
 }
+
