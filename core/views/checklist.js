@@ -204,6 +204,7 @@ window.SAHMT_CHECKLIST_CONTRACT=(await import('../checklist-contract.js')).check
   function closeCompleteSignatureBanner(){const banner=$('completeSignatureBanner');if(!banner)return;banner.hidden=true;$('confirmCompleteSignature').disabled=false;setSignatureReason('completeSignatureReasonGroup');}
   function openCompleteSignatureBanner(){if(!report||!report.canSign||report.signature)return;const banner=$('completeSignatureBanner');if(!banner)return;const responsible=normalizedEmail(report.responsible?.email),signedBy=normalizedEmail(session?.email),other=!!responsible&&responsible!==signedBy;$('completeSignaturePrompt').textContent=other?'O responsável do dia não está assinando. Selecione a justificativa desta assinatura.':'Declaro que acompanhei os checklists e tomei as providências necessárias em caso de riscos do Arsenal tecnológico/estrutural da Anestesiologia.';$('completeSignatureReasonGroup').hidden=!other;setSignatureReason('completeSignatureReasonGroup');$('confirmCompleteSignature').textContent='Assinar';banner.hidden=false;}
   function renderReport(data){
+    document.querySelectorAll('.dialog-message').forEach(node=>node.remove());
     data=window.SAHMT_CHECKLIST_CONTRACT(data,'report');
     if(!data.responsible && report && report.day===data.day)data.responsible=report.responsible;
     report=data;const orderedItems=[...data.items].sort((a,b)=>Number(isInactiveMaintenance(a,data.day))-Number(isInactiveMaintenance(b,data.day)) || numericUnitId(a)-numericUnitId(b));const activeItems=orderedItems.filter(item=>!isMaintenance(item));const done=activeItems.filter(item=>item.record).length;const isToday=data.day===dateKey();const state=signatureState(data.responsible,data.signature);
@@ -310,7 +311,7 @@ window.SAHMT_CHECKLIST_CONTRACT=(await import('../checklist-contract.js')).check
     pendingSignature ||= crypto.randomUUID();
     const requestId=pendingSignature,day=report.day,at=new Date().toISOString(),justification=other?reason:'',payload={day,revision:report.revision,accepted:true,justification,signatureReason:reason,signedAt:at,requestId},signature={email:session?.email || '',at,incomplete:false,justification,reason};
     const button=$('confirmCompleteSignature');button.disabled=true;
-    applyOptimisticSignature(day,signature);pendingSignature=null;closeCompleteSignatureBanner();renderReport(report);notice('Relatório assinado às '+new Intl.DateTimeFormat('pt-BR',{timeZone:'America/Sao_Paulo',hour:'2-digit',minute:'2-digit',hour12:false}).format(new Date(at))+'. Sincronizando em segundo plano.');button.disabled=false;
+    applyOptimisticSignature(day,signature);pendingSignature=null;closeCompleteSignatureBanner();renderReport(report);button.disabled=false;
     void syncSignatureInBackground(payload,day);
   });
   $('cancelIncompleteSignature').onclick=()=>closeIncompleteSignatureBanner();
@@ -320,7 +321,7 @@ window.SAHMT_CHECKLIST_CONTRACT=(await import('../checklist-contract.js')).check
     if(!description)throw new Error('Descreva por que o checklist não foi concluído.');
     if(!report || !report.canSign || report.signature)return;
     const justification=composeSignatureJustification(reason,description);$('declaration').checked=true;pendingSignature ||= crypto.randomUUID();const button=$('confirmIncompleteSignature');button.disabled=true;
-    try{const day=report.day,at=new Date().toISOString(),result=await api('sign',{day,revision:report.revision,accepted:true,signWithoutComplete:true,justification,signatureReason:reason,signatureDescription:description,signedAt:at,requestId:pendingSignature}),signature=result?.signature||{email:session?.email || '',at,incomplete:true,justification,reason,description};rememberPendingSignature(day,signature);const confirmed=rememberReport({...result,signature,canSign:false,staleSignature:false});renderReport(confirmed);pendingSignature=null;notice('Relatório assinado com justificativa e registrado na planilha.');}catch(error){await loadReport().catch(()=>{});throw error;}finally{button.disabled=false;}
+    try{const day=report.day,at=new Date().toISOString(),result=await api('sign',{day,revision:report.revision,accepted:true,signWithoutComplete:true,justification,signatureReason:reason,signatureDescription:description,signedAt:at,requestId:pendingSignature}),signature=result?.signature||{email:session?.email || '',at,incomplete:true,justification,reason,description};rememberPendingSignature(day,signature);const confirmed=rememberReport({...result,signature,canSign:false,staleSignature:false});renderReport(confirmed);pendingSignature=null;}catch(error){await loadReport().catch(()=>{});throw error;}finally{button.disabled=false;}
   });  $('return').onclick=()=>{stopCamera();if(window.SAHMT_SHELL){window.SAHMT_SHELL.navigate(new URL('index.html',window.SAHMT_SHELL.base));return;}if(window.parent!==window){window.parent.postMessage({type:'sahmt-checklist-close'},cfg.parentOrigin);}else{location.href=cfg.parentOrigin+cfg.parentPath+'?skipNotice=1';}};
   function receiveSession(value){
     session=value;const slot=document.querySelector('[data-auth-user]');
