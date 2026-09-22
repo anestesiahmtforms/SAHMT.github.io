@@ -27,8 +27,7 @@ window.SAHMT_CHECKLIST_CONTRACT=(await import('../checklist-contract.js')).check
     $('message').textContent = message;
     $('message').dataset.state = /identificando unidade/i.test(message) ? 'identifying' : message ? 'notice' : '';
     document.querySelectorAll('.dialog-message').forEach(node=>node.remove());
-    const dialog=document.querySelector('dialog[open]');
-    if(message && dialog){const node=document.createElement('p');node.className='dialog-message';node.setAttribute('role','alert');node.textContent=message;dialog.querySelector('.dialog-head').after(node);}
+    document.querySelectorAll('.dialog-message').forEach(node=>node.remove());
   };
   function syncIndicator(state, elapsed = 0) {
     const node=$('reportSyncStatus'),label=$('reportSyncLabel');if(!node||!label)return;
