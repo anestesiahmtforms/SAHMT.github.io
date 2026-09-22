@@ -128,7 +128,7 @@ window.SAHMT_CHECKLIST_CONTRACT=(await import('../checklist-contract.js')).check
   }
   function decode(source,width,height,crop=false){
     const region=crop?cameraCrop(width,height):{sx:0,sy:0,sw:width,sh:height};
-    const ratio=Math.min(1,1200/Math.max(region.sw,region.sh));
+    const ratio=Math.min(1,900/Math.max(region.sw,region.sh));
     canvas.width=Math.max(1,Math.round(region.sw*ratio));canvas.height=Math.max(1,Math.round(region.sh*ratio));
     ctx.drawImage(source,region.sx,region.sy,region.sw,region.sh,0,0,canvas.width,canvas.height);
     const pixels=ctx.getImageData(0,0,canvas.width,canvas.height);
@@ -160,6 +160,9 @@ window.SAHMT_CHECKLIST_CONTRACT=(await import('../checklist-contract.js')).check
       if(track?.applyConstraints) track.applyConstraints({advanced:[{focusMode:'continuous'}]}).catch(()=>{});
       $('video').srcObject=stream;$('cameraDialog').showModal();await $('video').play();
       let lastQr='',stableReads=0,detecting=false;
+      const nativeDetector=typeof BarcodeDetector!=='undefined';
+      const detectInterval=nativeDetector?80:120;
+      const requiredReads=nativeDetector?1:2;
       const tick=async()=>{
         if(!scanning||detecting)return;
         try{
@@ -169,12 +172,12 @@ window.SAHMT_CHECKLIST_CONTRACT=(await import('../checklist-contract.js')).check
             const qr=await detectCameraFrame(v);
             if(qr){
               if(qr===lastQr)stableReads+=1;else{lastQr=qr;stableReads=1;}
-              if(stableReads>=2){identify(qr).catch(fail);return;}
+              if(stableReads>=requiredReads){identify(qr).catch(fail);return;}
             }else{lastQr='';stableReads=0;}
           }
         }catch(error){stopCamera();close('cameraDialog');fail(error);return;}
         finally{detecting=false;}
-        if(scanning)setTimeout(tick,180);
+        if(scanning)setTimeout(tick,detectInterval);
       };
       tick();
     }catch(error){stopCamera();throw new Error(error.name==='NotAllowedError'?'Permita o acesso à câmera ou use uma foto do QR Code.':error.message);}
