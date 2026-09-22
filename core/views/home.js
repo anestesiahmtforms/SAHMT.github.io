@@ -53,6 +53,7 @@ const {Services,localStorage,sessionStorage,document,window,navigator,location,h
   let deferredInstallPrompt = null;
   let activeContactToken = "";
   let activeContactWeekday = "";
+  let activeContactDate = "";
   let sharedStateHash = serializeSiglaState(siglaCheckState);
   let sharedStateTimer = null;
   let releaseSequence = Promise.resolve();
@@ -475,18 +476,19 @@ const {Services,localStorage,sessionStorage,document,window,navigator,location,h
     }
     persistSiglaCheckState();
     render(activeDate);
+    refreshActiveContactBanner(activeDate);
 
     if (!sharedStateEndpoint) {
       pendingReleaseKeys.delete(releaseKey);
-      button.disabled = false;
+      refreshActiveContactBanner(activeDate);
       return;
     }
 
     const sync = async () => {
       try {
-        const contactState = await pushSharedSiglaCheck(activeDate, contact.sigla, marked);
+        let contactState = await pushSharedSiglaCheck(activeDate, contact.sigla, marked);
         if (tokenMarked !== tokenWasMarked) {
-          await pushSharedSiglaCheck(activeDate, token, tokenMarked);
+          contactState = await pushSharedSiglaCheck(activeDate, token, tokenMarked);
         }
         if (contactState) {
           replaceSiglaCheckState(contactState);
@@ -496,6 +498,7 @@ const {Services,localStorage,sessionStorage,document,window,navigator,location,h
       } finally {
         pendingReleaseKeys.delete(releaseKey);
         render(activeDate);
+        refreshActiveContactBanner(activeDate);
       }
     };
     // Impede respostas lentas de uma marcação de sobrescrever a seguinte.
@@ -580,6 +583,7 @@ const {Services,localStorage,sessionStorage,document,window,navigator,location,h
         if (nextHash && nextHash !== sharedStateHash) {
           replaceSiglaCheckState(mergedState);
           render(elements.dateInput.value);
+          refreshActiveContactBanner(activeContactDate);
         }
       } catch (error) {
         // Polling should fail silently to avoid interrupting the app UX.
@@ -911,28 +915,37 @@ const {Services,localStorage,sessionStorage,document,window,navigator,location,h
   function openTokenDetails(token, weekdayLabel) {
     activeContactToken = token;
     activeContactWeekday = weekdayLabel || "";
-    const details = resolveTokenDetails(token, activeContactWeekday);
-    const matchedContacts = details.contacts;
-    const unresolved = details.unresolved;
-
-    elements.contactKicker.textContent = `Sigla ${token}`;
-    elements.contactTitle.textContent = matchedContacts.length
-      ? matchedContacts.length === 1
-        ? matchedContacts[0].name
-        : `Contatos vinculados a ${token}`
-      : `Sigla ${token}`;
-    elements.contactSummary.textContent = buildSummaryText(token, matchedContacts, unresolved);
-    const activeDate = elements.dateInput.value;
-    elements.contactList.replaceChildren(...buildContactNodes(matchedContacts, unresolved, token, activeDate));
-
+    activeContactDate = elements.dateInput.value;
+    renderActiveContactBanner();
     elements.contactModal.classList.remove("hidden");
     elements.contactModal.setAttribute("aria-hidden", "false");
     document.body.classList.add("modal-open");
   }
 
+  function renderActiveContactBanner() {
+    if (!activeContactToken || elements.contactModal.classList.contains("hidden")) return;
+    const details = resolveTokenDetails(activeContactToken, activeContactWeekday);
+    const matchedContacts = details.contacts;
+    const unresolved = details.unresolved;
+
+    elements.contactKicker.textContent = `Sigla ${activeContactToken}`;
+    elements.contactTitle.textContent = matchedContacts.length
+      ? matchedContacts.length === 1
+        ? matchedContacts[0].name
+        : `Contatos vinculados a ${activeContactToken}`
+      : `Sigla ${activeContactToken}`;
+    elements.contactSummary.textContent = buildSummaryText(activeContactToken, matchedContacts, unresolved);
+    elements.contactList.replaceChildren(...buildContactNodes(matchedContacts, unresolved, activeContactToken, activeContactDate));
+  }
+
+  function refreshActiveContactBanner(dateKey) {
+    if (dateKey === activeContactDate) renderActiveContactBanner();
+  }
+
   function closeContactModal() {
     activeContactToken = "";
     activeContactWeekday = "";
+    activeContactDate = "";
     elements.contactModal.classList.add("hidden");
     elements.contactModal.setAttribute("aria-hidden", "true");
     updateBodyModalState();
@@ -1637,3 +1650,4 @@ const {Services,localStorage,sessionStorage,document,window,navigator,location,h
 })();
 
 }
+
