@@ -215,6 +215,72 @@ dialog.report-dialog #equipmentList .equipment.has-open-status .status-banner .s
   font-size: .64rem !important;
 }
 
+/* Layout final do relatório: o arsenal fica em uma faixa fixa e o rodapé
+   mantém espaço próprio para responsável, assinatura e justificativas. */
+@media (max-width:680px) {
+  dialog.report-dialog {
+    display:grid !important;
+    grid-template-rows:auto auto minmax(0,31dvh) auto auto auto !important;
+    align-content:start !important;
+    gap:0 !important;
+  }
+  dialog.report-dialog .report-title,
+  dialog.report-dialog .report-date-banner { min-height:0 !important; }
+  dialog.report-dialog #equipmentList {
+    grid-row:3 !important;
+    display:grid !important;
+    flex:none !important;
+    height:31dvh !important;
+    min-height:0 !important;
+    max-height:31dvh !important;
+    margin:4px 0 6px !important;
+    padding:3px 2px !important;
+    gap:3px !important;
+    grid-template-columns:repeat(4,minmax(0,1fr)) !important;
+    grid-template-rows:repeat(7,minmax(0,1fr)) !important;
+    grid-auto-rows:minmax(0,1fr) !important;
+    overflow:hidden !important;
+  }
+  dialog.report-dialog #equipmentList .equipment,
+  dialog.report-dialog #equipmentList .arsenal-icon {
+    min-height:0 !important;
+    height:100% !important;
+  }
+  dialog.report-dialog #equipmentList .arsenal-icon {
+    max-height:34px !important;
+    padding:2px !important;
+    border-radius:11px !important;
+    font-size:.64rem !important;
+    line-height:1 !important;
+  }
+  dialog.report-dialog #equipmentList .arsenal-number { font-size:.61rem !important; line-height:1 !important; }
+  dialog.report-dialog #equipmentList .arsenal-status-meta { font-size:.42rem !important; line-height:1 !important; }
+  dialog.report-dialog #responsible {
+    grid-row:4 !important;
+    min-height:34px !important;
+    max-height:58px !important;
+    margin:2px 0 4px !important;
+    overflow:hidden !important;
+  }
+  dialog.report-dialog #reportSignActions {
+    grid-row:5 !important;
+    min-height:0 !important;
+    max-height:none !important;
+    margin:2px 0 4px !important;
+    overflow:visible !important;
+  }
+  dialog.report-dialog > button[data-close="reportDialog"] {
+    grid-row:6 !important;
+    min-height:38px !important;
+    margin:3px 0 0 !important;
+  }
+}
+@media (max-width:380px) {
+  dialog.report-dialog { grid-template-rows:auto auto minmax(0,29dvh) auto auto auto !important; }
+  dialog.report-dialog #equipmentList { height:29dvh !important; max-height:29dvh !important; }
+  dialog.report-dialog #equipmentList .arsenal-icon { max-height:31px !important; }
+}
+
 /* Regra final da grade: reservar espaço real para a assinatura no rodapé. */
 @media (max-width:680px) {
   dialog.report-dialog #equipmentList {
