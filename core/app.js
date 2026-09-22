@@ -14,6 +14,21 @@ const bootScreen=document.getElementById('boot-screen'),bootMessage=document.get
 let bootFinished=false;
 function finishBoot(message=''){if(bootFinished)return;bootFinished=true;if(message&&bootMessage)bootMessage.textContent=message;if(bootScreen)bootScreen.hidden=true;globalThis.SAHMT_APP_READY=true;globalThis.SAHMT_PWA_READY?.();}
 const bootSlowTimer=setTimeout(()=>{if(!bootFinished&&bootMessage)bootMessage.textContent='Ainda carregando. Verifique sua conexão e aguarde…';},8000);
+const CHECKLIST_REPORT_CACHE_MS=90000;
+let checklistWarmDay='',checklistWarmAt=0,checklistWarmPending=false;
+function localDayKey(){const parts=new Intl.DateTimeFormat('en-US',{timeZone:'America/Sao_Paulo',year:'numeric',month:'2-digit',day:'2-digit'}).formatToParts(new Date());const v=Object.fromEntries(parts.filter(p=>p.type!=='literal').map(p=>[p.type,p.value]));return `${v.year}-${v.month}-${v.day}`;}
+function warmChecklistReport(){
+  if(document.visibilityState==='hidden'||navigator.onLine===false||!Services.user?.uid||checklistWarmPending)return;
+  const day=localDayKey(),now=Date.now();
+  if(checklistWarmDay===day&&now-checklistWarmAt<CHECKLIST_REPORT_CACHE_MS)return;
+  checklistWarmDay=day;checklistWarmAt=now;checklistWarmPending=true;
+  Services.checklist('report',{day},{force:true,timeoutMs:15000,cacheTtlMs:CHECKLIST_REPORT_CACHE_MS})
+    .catch(()=>{if(checklistWarmDay===day)checklistWarmAt=0;})
+    .finally(()=>{checklistWarmPending=false;});
+}
+setInterval(warmChecklistReport,CHECKLIST_REPORT_CACHE_MS);
+document.addEventListener('visibilitychange',()=>{if(!document.hidden)warmChecklistReport();});
+window.addEventListener('online',warmChecklistReport);
 
 function routeFor(url){return url.origin===base.origin&&url.pathname.startsWith(base.pathname)?routes[url.pathname.slice(base.pathname.length)]:undefined;}
 function desiredURL(){const url=new URL(base);const hash=location.hash.slice(1);if(hash.startsWith('/'))return new URL(hash.slice(1),base);return new URL('index.html'+location.search,base);}
@@ -66,7 +81,7 @@ export async function navigate(input,{replace=false,fromHistory=false}={}){
   const ticket=++sequence;lastRequested=url;status.hidden=true;retry.hidden=true;
   const loading=setTimeout(()=>{if(ticket===sequence){status.textContent='Carregando dados de '+names[id]+'…';status.hidden=false;}},250);
   try{
-    await window.SAHMT_AUTH.requireAccess({moduleId:id.toUpperCase(),pageId:'home'});if(ticket!==sequence)return;
+    await window.SAHMT_AUTH.requireAccess({moduleId:id.toUpperCase(),pageId:'home'});warmChecklistReport();if(ticket!==sequence)return;
     const page=await loadPage(id,url);if(ticket!==sequence){if(current!==page)page.ctx.deactivate();return;}
     if(current&&current!==page)current.ctx.deactivate();current=page;page.ctx.activate(url);updateUser(page);
     if(!fromHistory){const target=routeURL(url);if(location.hash!==target)history[replace?'replaceState':'pushState']({},'',target);}
@@ -91,3 +106,4 @@ window.addEventListener('sahmt:auth-retry',()=>navigate(desiredURL(),{replace:tr
 window.addEventListener('sahmt:account-change',()=>{accountGeneration++;pendingPages.clear();for(const p of pages.values())p.ctx.dispose();pages.clear();current=null;navigate(desiredURL(),{replace:true});});
 registerPwa({base}).catch(()=>{});
 navigate(desiredURL(),{replace:true});
+

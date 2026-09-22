@@ -11,7 +11,7 @@ export class Services {
  permission(key){return this.user?.permissions?.[key]===true;}
  get dcAliasesByWeekday(){return new Map([['Segunda',['CR','LH']],['Terca',['CR','AD','LH']],['Quarta',['CR','AD','LH']],['Quinta',['CR','LH']],['Sexta',['CR','LA']]]);}
  async confirmAccount(){const before=this.session.snapshot?.()?.generation;await this.session.confirm();if(before!==this.session.snapshot?.()?.generation){const e=new Error('A conta foi alterada.');e.code='ACCOUNT_CHANGED';throw e;}}
- async read(action,data={},force=false,requestOptions={}){await this.confirmAccount();const key=action+':'+JSON.stringify(data);if(force)this.store.invalidate(key);return this.store.load(key,()=>this.api.call(action,data,requestOptions));}
+ async read(action,data={},force=false,requestOptions={}){await this.confirmAccount();const key=action+':'+JSON.stringify(data);if(force)this.store.invalidate(key);return this.store.load(key,()=>this.api.call(action,data,requestOptions),requestOptions.cacheTtlMs??5000);}
  async write(action,data={},options={}){
   await this.confirmAccount();const generation=this.session.snapshot?.()?.generation;data=safePayload(data);const signature=action+':'+JSON.stringify(data);
   const requestId=options.requestId||this.operations.get(signature)||crypto.randomUUID();this.operations.set(signature,requestId);
@@ -28,7 +28,7 @@ export class Services {
  eventPayload(p){return {data:iso(p.dataDoEvento||p.data),membro:p.membroAusenteAtrasado,tipoEvento:p.tipoDeEvento,descricao:p.descricaoDoEvento,multiploAtraso:p.multiploDoAtraso,substituto:p.membroSubstituto,turno:p.turno,pagador:p.pagador,credor:p.resultadoCredor,valor:p.valorAPagar,...(p.siglaEvento?{siglaEvento:p.siglaEvento}:{}),...(p.operation==='update'?{id:p.id,version:p.version}:{})};}
  async saveEvent(p){return this.write(p.operation==='update'?'eventos.update':'eventos.save',this.eventPayload(p),{queue:p.operation!=='update'});}
  async eventLists(){const o=await this.read('eventos.options');return Array.from({length:Math.max(o.payers.length,o.creditors.length)},(_,i)=>[o.eventTypes[i]||'',o.payers[i]||'',o.creditors[i]||'',o.shifts[i]||'',o.delayMultiples[i]||'',o.dc[i]||'']);}
- async checklist(action,payload={},options={}){const {requestId,...data}=payload;const result=['record','sign'].includes(action)?await this.write('checklist.'+action,data,{requestId}):await this.read('checklist.'+action,data,options.force,{timeoutMs:options.timeoutMs});return {ok:true,...result,...(result.record?{...result.record,at:result.record.createdAt}:{})};}
+ async checklist(action,payload={},options={}){const {requestId,...data}=payload;const result=['record','sign'].includes(action)?await this.write('checklist.'+action,data,{requestId}):await this.read('checklist.'+action,data,options.force,{timeoutMs:options.timeoutMs,cacheTtlMs:options.cacheTtlMs});return {ok:true,...result,...(result.record?{...result.record,at:result.record.createdAt}:{})};}
  async training(action,payload={}){const result=action==='catalog'?await this.read('treinamentos.list',{},true):await this.write('treinamentos.'+action,payload);return {ok:true,apiVersion:1,...result};}
  async activities(action,payload={}){return action==='interact'?this.write('activities.interact',payload):this.read('activities.'+action,payload,true);}
  pending(action){return this.outbox.read().filter(item=>item.action===action);}

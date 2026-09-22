@@ -6,7 +6,7 @@ window.SAHMT_CHECKLIST_CONTRACT=(await import('../checklist-contract.js')).check
   const $ = id => document.getElementById(id);
   const cfg = {apiUrl:Services.configured?"central-service":"",parentOrigin:window.location.origin,parentPath:"/"};
   let session = null, stream = null, scanning = false, cameraDetector = null, current = null, report = null, prefetchStartedDay = '', prefetchStartedMonth = '', lastValidReportDay = '';
-  const reportCache = new Map(), pendingReads = new Map(), REPORT_CACHE_MS = 15000;
+  const reportCache = new Map(), pendingReads = new Map(), CHECKLIST_REPORT_CACHE_MS = 90000;
   const MAINTENANCE_UNITS = new Set();
   const DIRECT_RECORD_USERS = new Set();
   let activatedMaintenance = new Set(), activatedMaintenanceDay = '', manualMaintenance = new Set(), resetRecords = new Set();
@@ -256,15 +256,30 @@ window.SAHMT_CHECKLIST_CONTRACT=(await import('../checklist-contract.js')).check
   async function loadReport(){
     const day=$('reportDate').value;
     if(!isIsoDay(day)){$('reportDate').value=lastValidReportDay || dateKey();return;}
-    const request=++reportRequest,key=requestKey('report',{day}),cached=reportCache.get(key)?.data;
+    const request=++reportRequest,key=requestKey('report',{day}),serviceKey='checklist.report:'+JSON.stringify({day}),stored=Services.store.peek(serviceKey);
+    const cached=reportCache.get(key)?.data||(stored?rememberReport(window.SAHMT_CHECKLIST_CONTRACT({ok:true,...stored},'report',{day})):null);
     lastValidReportDay=day;reportSyncPending=!!cached;startReportSync();
     if(cached){renderReport({...cached,canSign:false});}
     else{$('sign').disabled=true;report=null;$('equipmentList').replaceChildren();$('responsible').replaceChildren();$('signatureStatus').replaceChildren();}
+    const refreshInBackground=async()=>{
+      try{
+        const alreadyRefreshing=Services.store.pending.has(serviceKey);
+        const data=await api('report',{day},{force:!alreadyRefreshing,timeoutMs:15000,cacheTtlMs:CHECKLIST_REPORT_CACHE_MS});
+        if(request!==reportRequest)return;
+        reportSyncPending=false;renderReport(data);pendingSignature=null;finishReportSync();
+      }catch(error){
+        if(request!==reportRequest)return;
+        $('sign').disabled=true;failReportSync();
+        if(cached){reportSyncPending=true;renderReport({...cached,canSign:false});return;}
+        throw error;
+      }
+    };
+    if(cached){void refreshInBackground().catch(()=>{});return cached;}
     try{
-      const data=await api('report',{day},{force:true,timeoutMs:15000});
+      const data=await api('report',{day},{timeoutMs:15000,cacheTtlMs:CHECKLIST_REPORT_CACHE_MS});
       if(request!==reportRequest)return;
       reportSyncPending=false;renderReport(data);pendingSignature=null;finishReportSync();
-    }catch(error){if(request!==reportRequest)return;$('sign').disabled=true;failReportSync();if(cached){reportSyncPending=true;renderReport({...cached,canSign:false});return cached;}throw error;}
+    }catch(error){if(request!==reportRequest)return;$('sign').disabled=true;failReportSync();throw error;}
   }
   async function loadMonthly(){
     const month=$('reportMonth').value;if(!month)return;$('monthlyDays').replaceChildren();$('monthlySummary').textContent='Consultando o mês…';
