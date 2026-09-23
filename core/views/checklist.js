@@ -291,6 +291,11 @@ const {ChecklistLocalStore}=await import('../checklist-local-store.js');
   function appendSignatureResult(parent,data,state){
     const panel=document.createElement('section');panel.className='signature-result-panel';
     const title=addText(panel,'strong',data.signature?.incomplete?'ASSINATURA SEM CONCLUIR':'ASSINATURA REGISTRADA');title.className='signature-result-title';
+    const responsibleEmail=normalizedEmail(data.responsible?.email);
+    if(responsibleEmail){
+      const responsibleState=state==='responsible'?'responsible':'other';
+      appendSignaturePerson(panel,'Responsável do dia',responsibleEmail,'responsible-email signature-'+responsibleState);
+    }
     const signer=normalizedEmail(data.signature?.email);
     appendSignaturePerson(panel,'Assinado por',signer || data.signature?.email,'signer-email signature-signed');
     const reason=signatureReason(data.signature);
