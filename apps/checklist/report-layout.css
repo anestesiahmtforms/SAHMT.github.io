@@ -1206,3 +1206,9 @@ dialog.report-dialog .recheck-prompt-banner[hidden]{display:none!important}
 dialog.report-dialog .recheck-prompt-banner p{margin:0!important;max-width:32ch!important;font-weight:800!important;line-height:1.35!important}
 dialog.report-dialog .recheck-prompt-actions{display:flex!important;justify-content:center!important;gap:10px!important;width:100%!important}
 dialog.report-dialog .recheck-prompt-actions button{min-width:88px!important;min-height:42px!important;margin:0!important}
+
+/* Mantém o Relatório Diário visível enquanto a primeira sincronização acontece. */
+dialog.report-dialog .report-loading-state{grid-column:1/-1;display:flex;min-height:100%;align-items:center;justify-content:center;flex-direction:column;gap:12px;margin:0;padding:18px;color:#17334c;text-align:center;font-weight:750;line-height:1.4}
+dialog.report-dialog .report-loading-error{color:#8f1d2c}
+dialog.report-dialog .report-loading-state button{min-width:150px;min-height:42px;margin:0}
+
