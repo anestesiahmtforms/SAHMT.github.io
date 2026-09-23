@@ -7,11 +7,11 @@ window.SAHMT_CHECKLIST_CONTRACT=(await import('../checklist-contract.js')).check
   const cfg = {apiUrl:Services.configured?"central-service":"",parentOrigin:window.location.origin,parentPath:"/"};
   let session = null, stream = null, scanning = false, cameraDetector = null, current = null, report = null, prefetchStartedDay = '', prefetchStartedMonth = '', lastValidReportDay = '';
   const reportCache = new Map(), pendingReads = new Map(), CHECKLIST_REPORT_CACHE_MS = 90000;
-  const MAINTENANCE_UNITS = new Set(['100170006','100170009']);
+  const MAINTENANCE_UNITS = new Set(['06','09']);
   const DIRECT_RECORD_USERS = new Set();
   let activatedMaintenance = new Set(), activatedMaintenanceDay = '', manualMaintenance = new Set(), resetRecords = new Set();
   const unitKey = item => String(item?.id ?? '').replace(/\D/g, '');
-  const isDefaultMaintenance = item => item?.inactive==null && MAINTENANCE_UNITS.has(unitKey(item));
+  const isDefaultMaintenance = item => item?.inactive==null && MAINTENANCE_UNITS.has(unitKey(item).slice(-2));
   const isMaintenance = item => item?.inactive===true || isDefaultMaintenance(item);
   function syncMaintenanceDay(day = dateKey()) {
     if (activatedMaintenanceDay !== day) { activatedMaintenanceDay = day; activatedMaintenance = new Set(); manualMaintenance = new Set(); resetRecords = new Set(); }
