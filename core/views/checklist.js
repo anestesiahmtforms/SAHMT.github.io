@@ -103,9 +103,10 @@ window.SAHMT_CHECKLIST_CONTRACT=(await import('../checklist-contract.js')).check
   function fail(error){ notice(error.message || 'Não foi possível concluir.'); }
   const displayRecord = item => resetRecords.has(unitKey(item)) ? null : item?.record;
   const redArsenalOrder = new Map([['14',0],['03',1],['10',2],['30',3],['05',4],['15',5]]);
+  const finalArsenalOrder = new Map([['14',0],['03',1],['10',2],['30',3],['05',4],['15',5],['04',6],['06',7],['09',8],['11',9],['22',10]]);
   const redArsenalInfo = new Map([['14','Bloco2 sl.1'],['03','Bloco2 sl.2'],['10','Endoscopia'],['30','Hemod sl.1'],['05','Hemod sl.2'],['15','Ressonância']]);
   function reportItemGroup(item,day){const record=displayRecord(item);if(isInactiveMaintenance(item,day))return 2;if(record?.condition==='SIM')return 0;return 1;}
-  function sortReportItems(a,b,day){const groupA=reportItemGroup(a,day),groupB=reportItemGroup(b,day);if(groupA!==groupB)return groupA-groupB;if(groupA===0){const orderA=redArsenalOrder.get(unitKey(a).slice(-2))??999,orderB=redArsenalOrder.get(unitKey(b).slice(-2))??999;if(orderA!==orderB)return orderA-orderB;}return numericUnitId(a)-numericUnitId(b);}
+  function sortReportItems(a,b,day){const groupA=reportItemGroup(a,day),groupB=reportItemGroup(b,day);if(groupA!==groupB)return groupA-groupB;const suffixA=unitKey(a).slice(-2),suffixB=unitKey(b).slice(-2);if(groupA===1||groupA===2){const orderA=finalArsenalOrder.get(suffixA)??999,orderB=finalArsenalOrder.get(suffixB)??999;if(orderA!==orderB)return orderA-orderB;}return numericUnitId(a)-numericUnitId(b);}
   function checklistLockedForCurrentUser(){return !!(report?.lockedAfterSignature||report?.signature||report?.staleSignature)&&!canDirectRecord();}
   function activeArsenal(){const dialog=$('arsenalActionDialog'),key=dialog?.dataset.unitId||unitKey(current);const item=report?.items?.find(entry=>unitKey(entry)===key)||current;if(item)current=item;return item;}
   function arsenalActionStatus(item){
