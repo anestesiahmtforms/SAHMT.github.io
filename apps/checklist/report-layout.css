@@ -35,6 +35,10 @@ dialog.report-dialog:not([open]){display:none!important}.report-dialog{position:
 .report-date-banner .report-sync-status[data-state=updated]{color:#16803d}
 .report-date-banner .report-sync-status[data-state=updated] .report-sync-dot{background:#16803d;box-shadow:0 0 0 3px #c5e6cf}
 .report-date-banner .report-sync-status[data-state=error]{color:#b51f2b}
+.report-date-banner .report-sync-status[data-state=pending]{color:#9a6b00}
+.report-date-banner .report-sync-status[data-state=pending] .report-sync-dot{background:#c18400;box-shadow:0 0 0 3px #f5e4b8}
+.report-date-banner .report-sync-status[data-state=conflict]{color:#8f1d2c}
+.report-date-banner .report-sync-status[data-state=conflict] .report-sync-dot{background:#8f1d2c;box-shadow:0 0 0 3px #f5c7ca}
 @media(max-width:430px){
   .report-date-banner{padding:6px;margin-bottom:6px}
   .report-date-banner .controls-grid{gap:5px;margin-top:5px}

@@ -1,9 +1,11 @@
 export async function mount(ctx){
 const {Services,localStorage,sessionStorage,document,window,navigator,location,history,fetch,setTimeout,clearTimeout,setInterval,clearInterval,requestAnimationFrame,cancelAnimationFrame}=ctx;
 window.SAHMT_CHECKLIST_CONTRACT=(await import('../checklist-contract.js')).checklistResponse;
+const {ChecklistLocalStore}=await import('../checklist-local-store.js');
 (() => {
   'use strict';
   const $ = id => document.getElementById(id);
+  const cloneData = value => typeof globalThis.structuredClone === 'function' ? globalThis.structuredClone(value) : JSON.parse(JSON.stringify(value));
   const cfg = {apiUrl:Services.configured?"central-service":"",parentOrigin:window.location.origin,parentPath:"/"};
   let session = null, stream = null, scanning = false, cameraDetector = null, current = null, report = null, prefetchStartedDay = '', prefetchStartedMonth = '', lastValidReportDay = '';
   const reportCache = new Map(), pendingReads = new Map(), CHECKLIST_REPORT_CACHE_MS = 90000;
@@ -22,7 +24,8 @@ window.SAHMT_CHECKLIST_CONTRACT=(await import('../checklist-contract.js')).check
   const isInactiveMaintenance = (item, day = dateKey()) => { const key=unitKey(item); if(isActiveException(item))return false; if(manualMaintenance.has(key))return true; if(isDefaultMaintenance(item))return !(day===activatedMaintenanceDay&&activatedMaintenance.has(key)); return isMaintenance(item)&&!item.record&&!(day===activatedMaintenanceDay&&activatedMaintenance.has(key)); };
   const numericUnitId = item => Number(unitKey(item)) || Number.MAX_SAFE_INTEGER;
   const isIsoDay = value => /^\d{4}-\d{2}-\d{2}$/.test(String(value || ''));
-  let pendingRecord = null, pendingRecordMode = 'qr', pendingSignature = null, pendingSignatures = new Map(), busy = false, reportSyncTimer = null, reportSyncStartedAt = 0, reportSyncPending = false;
+  let pendingRecord = null, pendingRecordMode = 'qr', pendingSignature = null, pendingSignatures = new Map(), busy = false, reportSyncTimer = null, reportSyncStartedAt = 0, reportSyncPending = false, checklistSyncPromise = null, checklistSyncTimer = null, checklistResumeHandler = null, checklistAppVisible = true, lastReconciliationConfirmed = false, lastBackgroundReconcileAt = 0;
+  const blockedChecklistDays = new Set();
   const canvas = document.createElement('canvas');
   const ctx = canvas.getContext('2d', {willReadFrequently:true});
   const dateKey = () => {const parts=new Intl.DateTimeFormat('en-US',{timeZone:'America/Sao_Paulo',year:'numeric',month:'2-digit',day:'2-digit'}).formatToParts(new Date());const values=Object.fromEntries(parts.filter(part=>part.type!=='literal').map(part=>[part.type,part.value]));return `${values.year}-${values.month}-${values.day}`;};
@@ -35,13 +38,13 @@ window.SAHMT_CHECKLIST_CONTRACT=(await import('../checklist-contract.js')).check
   function syncIndicator(state, elapsed = 0) {
     const node=$('reportSyncStatus'),label=$('reportSyncLabel');if(!node||!label)return;
     node.dataset.state=state;
-    label.textContent=state==='syncing'?`Sincronizando ${String(elapsed).padStart(2,'0')}s`:state==='updated'?'Atualizado':state==='error'?'Falha na atualização':'Aguardando atualização';
+    const message=state==='syncing'?`Sincronizando ${String(elapsed).padStart(2,'0')}s`:state==='updated'?'Sincronizado':state==='conflict'?'Conflito':state==='error'?'Falha':state==='pending'?'Pendente':'Aguardando';label.textContent=message;node.setAttribute('aria-label',state==='updated'?'Sincronização confirmada':state==='conflict'?'Conflito: ação preservada para revisão':state==='error'?'Falha: ação preservada neste aparelho':state==='pending'?'Há ações pendentes de sincronização':message);
   }
   function startReportSync() {
-    clearInterval(reportSyncTimer);reportSyncStartedAt=Date.now();syncIndicator('syncing',0);
+    clearInterval(reportSyncTimer);reportSyncStartedAt=Date.now();lastReconciliationConfirmed=false;syncIndicator('syncing',0);
     reportSyncTimer=setInterval(()=>syncIndicator('syncing',Math.floor((Date.now()-reportSyncStartedAt)/1000)),1000);
   }
-  function finishReportSync() {const elapsed=Math.floor((Date.now()-reportSyncStartedAt)/1000);clearInterval(reportSyncTimer);reportSyncTimer=null;syncIndicator('updated',elapsed);}
+  async function finishReportSync() {const elapsed=Math.floor((Date.now()-reportSyncStartedAt)/1000);clearInterval(reportSyncTimer);reportSyncTimer=null;lastReconciliationConfirmed=true;const pending=await ChecklistLocalStore.listOperations({ownerEmail:session?.email||''}).catch(()=>[]);syncIndicator(pending.some(item=>item.status==='conflict')?'conflict':pending.some(item=>item.status==='error')?'error':pending.length?'pending':'updated',elapsed);}
   function failReportSync() {clearInterval(reportSyncTimer);reportSyncTimer=null;syncIndicator('error');}
   function shiftDay(day,delta) {const value=new Date(`${day}T12:00:00Z`);value.setUTCDate(value.getUTCDate()+delta);return value.toISOString().slice(0,10);}
   async function authPayload() {
@@ -56,15 +59,16 @@ window.SAHMT_CHECKLIST_CONTRACT=(await import('../checklist-contract.js')).check
   function signatureReason(signature){if(SIGNATURE_REASONS.includes(signature?.reason))return signature.reason;const raw=String(signature?.justification || '');return SIGNATURE_REASONS.find(reason=>raw===reason||raw.startsWith(reason+' —')||raw.startsWith(reason+' -')) || '';}
   function signatureDescription(signature){const raw=String(signature?.description || signature?.justification || ''),reason=signatureReason(signature);if(!reason)return raw;for(const separator of [' — ',' - '])if(raw.startsWith(reason+separator))return raw.slice((reason+separator).length);return raw;}
   function composeSignatureJustification(reason,description=''){return description?reason+' — '+description:reason;}
-  function rememberPendingSignature(day,signature){if(day&&signature?.email)pendingSignatures.set(String(day),{...signature});}
+  function userDayKey(day){return `${String(session?.uid||session?.email||'anonymous')}:${String(day||'')}`;}
+  function rememberPendingSignature(day,signature){if(day&&signature?.email)pendingSignatures.set(userDayKey(day),{...signature});}
   function mergePendingSignature(data){
-    const day=String(data?.day||''),pending=pendingSignatures.get(day);if(!pending)return data;
+    const day=userDayKey(data?.day),pending=pendingSignatures.get(day);if(!pending)return data;
     if(data.signature){pendingSignatures.delete(day);return data;}
     return {...data,signature:pending,canSign:false,staleSignature:false,revision:''};
   }
-  function rememberReport(data){const merged=mergePendingSignature(data);if(merged?.day)reportCache.set(requestKey('report',{day:merged.day}),{at:Date.now(),data:merged});return merged;}
+  function rememberReport(data){const merged=mergePendingSignature(data);if(merged?.day){reportCache.set(userDayKey(merged.day),{at:Date.now(),data:merged});if(session?.uid&&session?.email){void ChecklistLocalStore.saveReport(merged.day,session.uid,session.email,merged).catch(()=>{});if(Array.isArray(merged.qrCatalog))void ChecklistLocalStore.cacheQrCatalog(merged.day,merged.qrCatalog).catch(()=>{});}}return merged;}
   function patchCachedReport(day,record){
-    const key=requestKey('report',{day});const cached=reportCache.get(key);if(!cached?.data?.items)return;
+    const key=userDayKey(day);const cached=reportCache.get(key);if(!cached?.data?.items)return;
     const data=JSON.parse(JSON.stringify(cached.data));const item=data.items.find(entry=>String(entry.id)===String(record.unitId));if(!item)return;
     item.record={id:record.id,at:record.at,condition:record.condition,occurrence:record.occurrence,email:record.email,name:record.name};data.signature=null;data.staleSignature=true;data.revision='';reportCache.set(key,{at:Date.now(),data});
   }
@@ -74,19 +78,15 @@ window.SAHMT_CHECKLIST_CONTRACT=(await import('../checklist-contract.js')).check
     const item=report.items.find(entry=>String(entry.id)===String(record.unitId));if(!item)return;
     item.record={id:record.id,at:record.at,condition:record.condition,occurrence:record.occurrence,email:record.email,name:record.name};
     resetRecords.delete(unitKey(item));report.signature=null;report.staleSignature=true;report.revision='';
+    if(session?.uid&&session?.email)void ChecklistLocalStore.saveReport(day,session.uid,session.email,report).catch(()=>{});
   }
-  async function syncRecordInBackground(payload,day){
-    try{await api('record',payload);await refreshReport(day);}
-    catch(error){await refreshReport(day);notice('O registro foi enviado, mas a confirmação demorou. Atualize o relatório antes de assinar.');}
-  }
+  async function syncRecordInBackground(payload,day){return syncChecklistQueue(day);}
   function applyOptimisticSignature(day,signature){
     if(report?.day!==day)return;
     rememberPendingSignature(day,signature);report.signature=signature;report.canSign=false;report.staleSignature=false;report.revision='';
+    if(session?.uid&&session?.email)void ChecklistLocalStore.saveReport(day,session.uid,session.email,report).catch(()=>{});
   }
-  async function syncSignatureInBackground(payload,day){
-    try{const result=await api('sign',payload);rememberReport(result);await refreshReport(day);}
-    catch(error){pendingSignatures.delete(String(day));await refreshReport(day);if(report?.day===day)notice('A assinatura foi iniciada, mas a confirmação demorou. Atualize o relatório antes de assinar novamente.');}
-  }
+  async function syncSignatureInBackground(payload,day){return syncChecklistQueue(day);}
   async function refreshReport(day){startReportSync();try{const data=await api('report',{day},{force:true});if(report?.day===day)renderReport(data);finishReportSync();return data;}catch{failReportSync();return null;}}
   async function parseJsonResponse(response) {
     const body = await response.text();
@@ -100,7 +100,82 @@ window.SAHMT_CHECKLIST_CONTRACT=(await import('../checklist-contract.js')).check
       throw new Error("O serviço de dados retornou uma resposta inválida. Tente atualizar novamente.");
     }
   }
-  async function api(action,payload={},options={}){await authPayload();const result=window.SAHMT_CHECKLIST_CONTRACT(await Services.checklist(action,payload,options),action,payload);return action==="report"?rememberReport(result):result;}
+  async function api(action,payload={},options={}){await authPayload();const result=window.SAHMT_CHECKLIST_CONTRACT(await Services.checklist(action,payload,options),action,payload);return action==="report"?overlayPendingOperations(rememberReport(result)):result;}
+  function sessionOwner(){return {email:normalizedEmail(session?.email),uid:String(session?.uid||'')};}
+  async function overlayPendingOperations(data){
+    const {email,uid}=sessionOwner();if(!data?.day||!email||!uid)return data;
+    const operations=await ChecklistLocalStore.listOperations({day:data.day,ownerEmail:email,statuses:['pending','retry']}).catch(()=>[]);
+    if(!operations.length)return data;
+    const merged=cloneData(data);
+    for(const operation of operations){
+      if(operation.actorUid!==uid)continue;
+      if(operation.action==='record'&&operation.optimistic?.record){
+        const key=String(operation.optimistic.record.unitId).replace(/\D/g,'');const item=merged.items?.find(entry=>unitKey(entry)===key);if(!item)continue;
+        item.record=operation.optimistic.record;merged.signature=null;merged.staleSignature=true;merged.revision='';
+      }else if(operation.action==='sign'&&operation.optimistic?.signature){
+        merged.signature=operation.optimistic.signature;merged.canSign=false;merged.staleSignature=false;merged.revision='';
+      }
+    }
+    return merged;
+  }
+  async function enqueueChecklistOperation(action,payload,day,optimistic){
+    const owner=sessionOwner();if(!owner.email||!owner.uid||session?.authenticated!==true)throw new Error('Confirme seu acesso para registrar a ação.');
+    const requestId=String(payload.requestId||'');if(!requestId)throw new Error('Não foi possível identificar esta ação. Tente novamente.');
+    const saved=await ChecklistLocalStore.enqueue({requestId,action,day:String(day),ownerEmail:owner.email,actorUid:owner.uid,payload:cloneData(payload),optimistic:cloneData(optimistic)});blockedChecklistDays.add(String(day));return saved;
+  }
+  async function syncChecklistQueue(day){
+    if(checklistSyncPromise)return checklistSyncPromise;
+    checklistSyncPromise=(async()=>{
+      const {email,uid}=sessionOwner();if(!email||!uid||session?.authenticated!==true)return {sent:0};
+      const operations=await ChecklistLocalStore.listOperations({ownerEmail:email,statuses:['pending','retry']});let sent=0,failed=false,conflict=false,correctionDay='';
+      for(const operation of operations){
+        if(operation.nextAttemptAt>Date.now())continue;
+        const live=sessionOwner();if(live.email!==email||live.uid!==uid)break;
+        if(operation.actorUid!==uid){await ChecklistLocalStore.updateOperation(operation.requestId,{status:'error',lastError:'A conta ativa não corresponde à conta que criou a operação.'});failed=true;continue;}
+        syncIndicator('syncing',0);
+        try{
+          const result=await api(operation.action,{...operation.payload,requestId:operation.requestId},{timeoutMs:20000});
+          if(operation.action==='sign'){
+            const confirmed=window.SAHMT_CHECKLIST_CONTRACT(result,'report',{day:operation.day});
+            rememberReport(confirmed);
+          }
+          await ChecklistLocalStore.updateOperation(operation.requestId,{status:'synced',syncedAt:Date.now(),lastError:'',nextAttemptAt:0});sent++;
+        }catch(error){
+          const attempts=(operation.attempts||0)+1,isConflict=error?.code==='CONFLICT',retryable=error?.retryable===true&&attempts<8,delay=Math.min(300000,2000*2**Math.min(attempts,7));
+          const lastError=error?.retryable===true&&!retryable?'Limite de oito tentativas atingido. '+String(error?.message||'Falha de sincronização'):String(error?.message||'Falha de sincronização');
+          await ChecklistLocalStore.updateOperation(operation.requestId,{status:retryable?'retry':isConflict?'conflict':'error',attempts,lastError:lastError.slice(0,240),nextAttemptAt:retryable?Date.now()+delay:0});
+          conflict ||= isConflict;if(!retryable&&operation.action==='sign')pendingSignatures.delete(userDayKey(operation.day));
+          if(!retryable)correctionDay=operation.day;
+          failed=true;if(retryable){window.setTimeout(()=>void syncChecklistQueue(day).catch(()=>{}),delay);break;}continue;
+        }
+      }
+      if(correctionDay){try{const corrected=await api('report',{day:correctionDay},{force:true,timeoutMs:15000});if(report?.day===correctionDay&&$('reportDialog')?.open)renderReport(corrected);lastReconciliationConfirmed=true;}catch{}}
+      const remainingOperations=await ChecklistLocalStore.listOperations({ownerEmail:email}),remaining=remainingOperations.length;
+      blockedChecklistDays.clear();remainingOperations.forEach(item=>blockedChecklistDays.add(String(item.day)));
+      const storedConflict=remainingOperations.some(item=>item.status==='conflict'),storedError=remainingOperations.some(item=>item.status==='error');
+      if(conflict||storedConflict)syncIndicator('conflict');
+      else if((failed||storedError)&&remaining)syncIndicator('error');
+      else if(remaining)syncIndicator('pending');
+      else if(sent){
+        const targetDay=day||report?.day;
+        if(targetDay&&report?.day===targetDay&&$('reportDialog')?.open){const refreshed=await refreshReport(targetDay);if(!refreshed)syncIndicator('error');}
+        else syncIndicator(lastReconciliationConfirmed?'updated':'pending');
+      }else if(!remaining&&lastReconciliationConfirmed)syncIndicator('updated');
+      return {sent,pending:remaining,failed};
+    })().catch(()=>{syncIndicator('error');return {sent:0,pending:1,failed:true};}).finally(()=>{checklistSyncPromise=null;});
+    return checklistSyncPromise;
+  }
+  function startChecklistBackgroundSync(){
+    if(checklistSyncTimer){if(!document.hidden&&checklistAppVisible&&navigator.onLine!==false)void syncChecklistQueue().catch(()=>{});return;}
+    checklistResumeHandler=()=>{if(document.hidden||!checklistAppVisible||navigator.onLine===false)return;prefetchChecklistToday();void syncChecklistQueue().then(async result=>{if(!result.pending&&report?.day&&$('reportDialog')?.open&&Date.now()-lastBackgroundReconcileAt>=180000){lastBackgroundReconcileAt=Date.now();await refreshReport(report.day);}}).catch(()=>{});};
+    window.addEventListener('online',checklistResumeHandler);document.addEventListener('visibilitychange',checklistResumeHandler);
+    checklistSyncTimer=setInterval(checklistResumeHandler,45000);checklistResumeHandler();
+  }
+  function stopChecklistBackgroundSync(){if(checklistSyncTimer){clearInterval(checklistSyncTimer);checklistSyncTimer=null;}if(checklistResumeHandler){window.removeEventListener('online',checklistResumeHandler);document.removeEventListener('visibilitychange',checklistResumeHandler);checklistResumeHandler=null;}}
+  function prefetchChecklistToday(){
+    const day=dateKey();if(prefetchStartedDay===day||!session?.authenticated||navigator.onLine===false)return;prefetchStartedDay=day;
+    window.setTimeout(()=>{if(document.hidden||!checklistAppVisible||navigator.onLine===false)return;void api('report',{day},{timeoutMs:15000,cacheTtlMs:CHECKLIST_REPORT_CACHE_MS}).catch(()=>{});},600);
+  }
   function stopCamera(){scanning=false;stream?.getTracks().forEach(track=>track.stop());stream=null;$('video').srcObject=null;}
   function close(id){if(id==='cameraDialog')stopCamera();$(id).close();}
   function fail(error){ notice(error.message || 'Não foi possível concluir.'); }
@@ -132,7 +207,10 @@ window.SAHMT_CHECKLIST_CONTRACT=(await import('../checklist-contract.js')).check
   }
   async function identify(raw){
     stopCamera();close('cameraDialog');notice('Identificando unidade…');
-    const data=await api('resolve',{qr:String(raw)});await openRecordForUnit(data.unit);
+    const qr=String(raw),day=dateKey();let unit,networkError=null;
+    if(navigator.onLine!==false){try{const data=await api('resolve',{qr},{timeoutMs:8000});unit=data.unit;await ChecklistLocalStore.cacheQrUnit(qr,day,unit).catch(()=>{});}catch(error){networkError=error;if(!error?.retryable)throw error;}}
+    if(!unit){const cached=await ChecklistLocalStore.getQrUnit(qr,day).catch(()=>null);if(!cached?.unit){if(networkError)throw networkError;throw new Error('Sem conexão. Este QR ainda não foi identificado neste aparelho hoje. Conecte-se uma vez para liberar a leitura offline.');}unit=cached.unit;}
+    await openRecordForUnit(unit);
   }  function cameraCrop(width,height){
     const side=Math.max(160,Math.floor(Math.min(width,height)*0.68));
     return {sx:Math.max(0,Math.floor((width-side)/2)),sy:Math.max(0,Math.floor((height-side)/2)),sw:Math.min(side,width),sh:Math.min(side,height)};
@@ -247,11 +325,11 @@ window.SAHMT_CHECKLIST_CONTRACT=(await import('../checklist-contract.js')).check
     if(statusText)addText(statusWrap,'p',statusText).className='signature signature-'+state;
     const incompletePending=mode==='ready';
     if(data.signature){appendSignatureResult(statusWrap,data,state);}
-    else if(incompletePending){const incompleteButton=addText(statusWrap,'button','Assinar sem concluir');incompleteButton.type='button';incompleteButton.className='sign-incomplete-button';incompleteButton.disabled=!data.canSign||reportSyncPending;incompleteButton.setAttribute('aria-label','Assinar relatório sem concluir todos os checklists');incompleteButton.onclick=()=>openIncompleteSignatureBanner(data.signature);}
+    else if(incompletePending){const incompleteButton=addText(statusWrap,'button','Assinar sem concluir');incompleteButton.type='button';incompleteButton.className='sign-incomplete-button';incompleteButton.disabled=!data.canSign||reportSyncPending||blockedChecklistDays.has(String(data.day));incompleteButton.setAttribute('aria-label','Assinar relatório sem concluir todos os checklists');incompleteButton.onclick=()=>openIncompleteSignatureBanner(data.signature);}
     $('reportSignActions').className='report-sign-actions mode-'+mode;
     $('signatureStatus').append(statusWrap);
     $('signForm').hidden=mode!=='ready';$('declaration').checked=false;
-    $('sign').disabled=reportSyncPending||!!data.signature || (!!(data.lockedAfterSignature||data.staleSignature)&&!canDirectRecord()) || !isToday || !data.canSign || !done || done!==activeItems.length;
+    $('sign').disabled=reportSyncPending||blockedChecklistDays.has(String(data.day))||!!data.signature || (!!(data.lockedAfterSignature||data.staleSignature)&&!canDirectRecord()) || !isToday || !data.canSign || !done || done!==activeItems.length;
     closeIncompleteSignatureBanner();closeCompleteSignatureBanner();
   }
   function closeArsenalBanners(){document.querySelectorAll('.equipment').forEach(node=>node.classList.remove('has-open-status'));document.querySelectorAll('.equipment .status-banner').forEach(node=>{node.hidden=true;});}
@@ -270,8 +348,12 @@ window.SAHMT_CHECKLIST_CONTRACT=(await import('../checklist-contract.js')).check
   async function loadReport(){
     const day=$('reportDate').value;
     if(!isIsoDay(day)){$('reportDate').value=lastValidReportDay || dateKey();return;}
-    const request=++reportRequest,key=requestKey('report',{day}),serviceKey='checklist.report:'+JSON.stringify({day}),stored=Services.store.peek(serviceKey);
-    const cached=reportCache.get(key)?.data||(stored?rememberReport(window.SAHMT_CHECKLIST_CONTRACT({ok:true,...stored},'report',{day})):null);
+    await authPayload();
+    const request=++reportRequest,key=userDayKey(day),serviceKey='checklist.report:'+JSON.stringify({day}),stored=Services.store.peek(serviceKey),owner=sessionOwner();
+    const disk=owner.uid?await ChecklistLocalStore.getReport(day,owner.uid).catch(()=>null):null;
+    let cached=reportCache.get(key)?.data||(stored?rememberReport(window.SAHMT_CHECKLIST_CONTRACT({ok:true,...stored},'report',{day})):disk?.data||null);
+    if(cached){try{cached=await overlayPendingOperations(window.SAHMT_CHECKLIST_CONTRACT(cached,'report',{day}));}catch{cached=null;}}
+    const unsettled=owner.email?await ChecklistLocalStore.listOperations({day,ownerEmail:owner.email}):[];if(unsettled.length)blockedChecklistDays.add(day);else blockedChecklistDays.delete(day);
     lastValidReportDay=day;reportSyncPending=!!cached;startReportSync();
     if(cached){renderReport({...cached,canSign:false});}
     else{$('sign').disabled=true;report=null;$('equipmentList').replaceChildren();$('responsible').replaceChildren();$('signatureStatus').replaceChildren();}
@@ -332,9 +414,9 @@ window.SAHMT_CHECKLIST_CONTRACT=(await import('../checklist-contract.js')).check
     if(condition==='NAO'&&!occurrence)throw new Error('Descreva a ocorrência antes de salvar.');
     if(!['SIM','NAO'].includes(condition))throw new Error('Selecione SIM ou NÃO.');
     pendingRecord ||= crypto.randomUUID();const button=$('recordForm').querySelector('[type=submit]');button.disabled=true;
-    const requestId=pendingRecord,day=dateKey(),payload={unitId:current.id,condition,occurrence,requestId,direct:pendingRecordMode==='direct'},record={unitId:current.id,id:requestId,at:new Date().toISOString(),condition,occurrence,email:session.email,name:session.name || ''};
+    const requestId=pendingRecord,day=dateKey(),actionAt=new Date().toISOString(),payload={unitId:current.id,condition,occurrence,day,actionAt,requestId,direct:pendingRecordMode==='direct'},record={unitId:current.id,id:requestId,at:actionAt,condition,occurrence,email:session.email,name:session.name || ''};
     if(condition==='SIM'||condition==='NAO'){
-      applyOptimisticRecord(day,record);pendingRecord=null;pendingRecordMode='qr';close('recordDialog');$('reportDate').value=day;openReportDialog();if(report)renderReport(report);notice(condition==='NAO'?'Manutenção solicitada. Sincronizando em segundo plano.':'Arsenal registrado. Sincronizando em segundo plano.');button.disabled=false;void syncRecordInBackground(payload,day);return;
+      try{await enqueueChecklistOperation('record',payload,day,{record});}catch(error){button.disabled=false;throw error;}applyOptimisticRecord(day,record);pendingRecord=null;pendingRecordMode='qr';close('recordDialog');$('reportDate').value=day;openReportDialog();if(report)renderReport(report);notice(condition==='NAO'?'Manutenção registrada no aparelho; sincronizando.':'Arsenal registrado no aparelho; sincronizando.');syncIndicator('pending');button.disabled=false;void syncRecordInBackground(payload,day);return;
     }
   }
   document.querySelectorAll('[data-condition-choice]').forEach(button=>button.onclick=()=>{const value=button.dataset.conditionChoice,input=$('recordForm').querySelector('input[name="condition"][value="'+value+'"]');if(!input)return;input.checked=true;input.dispatchEvent(new Event('change',{bubbles:true}));});
@@ -357,7 +439,7 @@ window.SAHMT_CHECKLIST_CONTRACT=(await import('../checklist-contract.js')).check
     const responsible=normalizedEmail(report.responsible?.email),signedBy=normalizedEmail(session?.email),other=!!responsible&&responsible!==signedBy;
     pendingSignature ||= crypto.randomUUID();
     const day=report.day,at=new Date().toISOString(),justification=other?reason:'',payload={day,revision:report.revision,accepted:true,justification,signatureReason:reason,signedAt:at,requestId:pendingSignature},signature={email:session?.email || '',at,incomplete:false,justification,reason};
-    document.querySelectorAll('#completeSignatureReasonGroup [data-signature-reason]').forEach(button=>button.disabled=true);applyOptimisticSignature(day,signature);pendingSignature=null;closeCompleteSignatureBanner();renderReport(report);void syncSignatureInBackground(payload,day);
+    await enqueueChecklistOperation('sign',payload,day,{signature});document.querySelectorAll('#completeSignatureReasonGroup [data-signature-reason]').forEach(button=>button.disabled=true);applyOptimisticSignature(day,signature);pendingSignature=null;closeCompleteSignatureBanner();renderReport(report);syncIndicator('pending');void syncSignatureInBackground(payload,day);
   }
   $('confirmCompleteSignature').onclick=()=>run(()=>submitCompleteSignature());
   $('cancelIncompleteSignature').onclick=()=>closeIncompleteSignatureBanner();
@@ -367,14 +449,16 @@ window.SAHMT_CHECKLIST_CONTRACT=(await import('../checklist-contract.js')).check
     if(!description)throw new Error('Descreva por que o checklist não foi concluído.');
     if(!report || !report.canSign || report.signature)return;
     const justification=composeSignatureJustification(reason,description);$('declaration').checked=true;pendingSignature ||= crypto.randomUUID();const day=report.day,at=new Date().toISOString(),payload={day,revision:report.revision,accepted:true,signWithoutComplete:true,justification,signatureReason:reason,signatureDescription:description,signedAt:at,requestId:pendingSignature},signature={email:session?.email || '',at,incomplete:true,justification,reason,description};
-    document.querySelectorAll('#incompleteSignatureReasonGroup [data-signature-reason]').forEach(button=>button.disabled=true);applyOptimisticSignature(day,signature);pendingSignature=null;closeIncompleteSignatureBanner();renderReport(report);void syncSignatureInBackground(payload,day);
+    await enqueueChecklistOperation('sign',payload,day,{signature});document.querySelectorAll('#incompleteSignatureReasonGroup [data-signature-reason]').forEach(button=>button.disabled=true);applyOptimisticSignature(day,signature);pendingSignature=null;closeIncompleteSignatureBanner();renderReport(report);syncIndicator('pending');void syncSignatureInBackground(payload,day);
   }
   $('confirmIncompleteSignature').onclick=()=>run(()=>submitIncompleteSignature());  $('return').onclick=()=>{stopCamera();if(window.SAHMT_SHELL){window.SAHMT_SHELL.navigate(new URL('index.html',window.SAHMT_SHELL.base));return;}if(window.parent!==window){window.parent.postMessage({type:'sahmt-checklist-close'},cfg.parentOrigin);}else{location.href=cfg.parentOrigin+cfg.parentPath+'?skipNotice=1';}};
   function receiveSession(value){
+    const prior=session;if(prior&&(prior.uid!==value?.uid||normalizedEmail(prior.email)!==normalizedEmail(value?.email))){report=null;reportCache.clear();pendingSignatures.clear();pendingRecord=null;pendingSignature=null;}
     session=value;const slot=document.querySelector('[data-auth-user]');
     if(slot){slot.textContent=value?.email||'';slot.hidden=!value?.email;slot.dataset.authenticated=String(value?.authenticated===true);}
     const enabled=value?.authenticated===true&&!!cfg.apiUrl;
     for(const id of ['scanSymbol','photo','report','monthly'])if($(id))$(id).disabled=!enabled;
+    if(enabled){checklistAppVisible=true;startChecklistBackgroundSync();prefetchChecklistToday();}else stopChecklistBackgroundSync();
   }
   window.addEventListener('message',event=>{if(event.origin!==cfg.parentOrigin || event.source!==window.parent || event.data?.type!=='sahmt-checklist-session')return;receiveSession(event.data.session);});
   if($('today'))$('today').textContent=new Intl.DateTimeFormat('pt-BR',{day:'2-digit',month:'2-digit',year:'numeric',timeZone:'America/Sao_Paulo'}).format(new Date());
@@ -382,8 +466,9 @@ window.SAHMT_CHECKLIST_CONTRACT=(await import('../checklist-contract.js')).check
   ['reportDialog','monthlyDialog','recordDialog','cameraDialog'].forEach(id=>{const dialog=$(id);if(dialog?.open)dialog.close();dialog?.removeAttribute('open');});
   receiveSession(window.SAHMT_AUTH?.getSession());
   window.SAHMT_AUTH?.onChange(receiveSession);
-  document.addEventListener('sahmt:hide',stopCamera);
+  document.addEventListener('sahmt:hide',()=>{checklistAppVisible=false;stopCamera();});
   document.addEventListener('sahmt:show',()=>{
+    checklistAppVisible=true;
     const today = dateKey();
     lastValidReportDay = today;
     report = null;
@@ -396,6 +481,8 @@ window.SAHMT_CHECKLIST_CONTRACT=(await import('../checklist-contract.js')).check
       dialog?.removeAttribute('open');
     });
     stopCamera();
+    startChecklistBackgroundSync();
+    prefetchChecklistToday();
   });
   if(window.parent!==window)window.parent.postMessage({type:'sahmt-checklist-ready'},cfg.parentOrigin);
   if(!cfg.apiUrl)notice('Cadastro das unidades e conexão com a planilha em configuração.');
