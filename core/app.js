@@ -10,9 +10,10 @@ const names={offline:'Escala/Férias OFF LINE',home:'SAHMT',eventos:'Operacional
 const pages=new Map(),pendingPages=new Map(),vendors=new Map(),definitions=new Map();let current=null,sequence=0,accountGeneration=0,lastRequested=null;
 const shellState=document.getElementById('shell-state'),status=document.getElementById('shell-status'),retry=document.getElementById('shell-retry');
 const root=document.getElementById('app');
-const bootScreen=document.getElementById('boot-screen'),bootMessage=document.getElementById('boot-message');
-let bootFinished=false;
-function finishBoot(message=''){if(bootFinished)return;bootFinished=true;if(message&&bootMessage)bootMessage.textContent=message;if(bootScreen)bootScreen.hidden=true;globalThis.SAHMT_APP_READY=true;globalThis.SAHMT_PWA_READY?.();}
+const bootScreen=document.getElementById('boot-screen'),bootMessage=document.getElementById('boot-message'),bootSlogan=document.getElementById('boot-slogan'),bootSyncStatus=document.getElementById('boot-sync-status');
+const STARTUP_BANNER_DURATION=10000,STARTUP_MAX_DURATION=10000;
+let bootFinished=false,startupActive=true,startupRunId=0,startupNavigationDone=false,startupSloganTimer=null;
+function finishBoot(message='',force=false){if(bootFinished)return;if(startupActive&&!force)return;bootFinished=true;if(message&&bootMessage)bootMessage.textContent=message;if(bootScreen)bootScreen.hidden=true;globalThis.SAHMT_APP_READY=true;globalThis.SAHMT_PWA_READY?.();}
 const bootSlowTimer=setTimeout(()=>{if(!bootFinished&&bootMessage)bootMessage.textContent='Ainda carregando. Verifique sua conexão e aguarde…';},8000);
 const CHECKLIST_REPORT_CACHE_MS=90000;
 let checklistWarmDay='',checklistWarmAt=0,checklistWarmPending=false;
@@ -29,6 +30,84 @@ function warmChecklistReport(){
 setInterval(warmChecklistReport,CHECKLIST_REPORT_CACHE_MS);
 document.addEventListener('visibilitychange',()=>{if(!document.hidden)warmChecklistReport();});
 window.addEventListener('online',warmChecklistReport);
+
+function setBootSyncStatus(state,text){
+  if(!bootSyncStatus)return;
+  bootSyncStatus.dataset.state=state;
+  bootSyncStatus.textContent=text;
+}
+function startStartupSlogans(runId){
+  clearInterval(startupSloganTimer);
+  const slogans=[['Gestão Responsável!','#16803d'],['Gestão Eficiente!','#1762a1'],['Gestão na palma da Mão!','#c96f00']];
+  const started=performance.now();
+  const show=()=>{
+    if(runId!==startupRunId||!bootSlogan)return;
+    const elapsed=performance.now()-started;
+    const index=Math.floor(elapsed/2000);
+    if(index>=3){bootSlogan.textContent='';return;}
+    bootSlogan.textContent=slogans[index][0];
+    bootSlogan.style.color=slogans[index][1];
+    bootSlogan.style.animation='none';
+    void bootSlogan.offsetWidth;
+    bootSlogan.style.animation='sahmt-slogan-in 2s ease both';
+  };
+  show();
+  startupSloganTimer=setInterval(show,2000);
+}
+function delay(ms){return new Promise(resolve=>setTimeout(resolve,ms));}
+function updateStartupResult(results){
+  const checklist=results.checklist,etiquetas=results.etiquetas;
+  if(checklist==='ok'&&etiquetas==='ok')setBootSyncStatus('updated','Dados atualizados.');
+  else if(checklist==='ok'&&etiquetas==='error')setBootSyncStatus('partial','Checklist atualizado. Etiquetas indisponível.');
+  else if(checklist==='error'&&etiquetas==='ok')setBootSyncStatus('partial','Etiquetas atualizada. Checklist indisponível.');
+  else if(checklist==='error'&&etiquetas==='error')setBootSyncStatus('error','Falha na atualização. Usando o último cache válido.');
+  else setBootSyncStatus('syncing','Sincronizando Checklist e Etiquetas…');
+}
+async function runStartupSync(runId){
+  const day=localDayKey(),results={checklist:'pending',etiquetas:'pending'};
+  const jobs=[
+    {key:'checklist',run:()=>Services.checklist('report',{day},{force:true,timeoutMs:8000,cacheTtlMs:CHECKLIST_REPORT_CACHE_MS})},
+    {key:'etiquetas',run:()=>Services.labelEntries({date:day})}
+  ];
+  const wrapped=jobs.map(({key,run})=>run().then(value=>{
+    if(key==='checklist'&&(!value||!Array.isArray(value.items)))throw new Error('Resposta inválida do Checklist');
+    if(key==='etiquetas'&&!Array.isArray(value))throw new Error('Resposta inválida de Etiquetas');
+    results[key]='ok';if(runId===startupRunId)updateStartupResult(results);return value;
+  }).catch(error=>{
+    results[key]='error';if(runId===startupRunId){console.warn('[SAHMT startup]',key,error?.message||error);updateStartupResult(results);}throw error;
+  }));
+  setBootSyncStatus('syncing','Sincronizando Checklist e Etiquetas…');
+  const all=Promise.allSettled(wrapped);
+  const started=performance.now();
+  const completed=await Promise.race([all.then(()=>true),delay(STARTUP_MAX_DURATION).then(()=>false)]);
+  const remaining=Math.max(0,STARTUP_BANNER_DURATION-(performance.now()-started));
+  if(remaining)await delay(remaining);
+  const timedOut=!completed&&[results.checklist,results.etiquetas].some(value=>value==='pending');
+  if(runId===startupRunId){
+    if(timedOut)setBootSyncStatus('timeout','Tempo limite atingido. Usando o último cache válido.');
+    else updateStartupResult(results);
+  }
+  return {results,timedOut};
+}
+async function startStartupFlow(){
+  const runId=++startupRunId;
+  startStartupSlogans(runId);
+  try{
+    await window.SAHMT_AUTH.requireAccess({moduleId:'SAHMT',pageId:'startup'});
+    const outcome=await runStartupSync(runId);
+    if(runId!==startupRunId||startupNavigationDone)return;
+    startupNavigationDone=true;
+    await navigate(new URL('apps/checklist/',base),{replace:true});
+    startupActive=false;
+    finishBoot(outcome.timedOut?'Sincronização parcial.':'');
+  }catch(error){
+    if(runId!==startupRunId)return;
+    console.warn('[SAHMT startup] falha total',error?.message||error);
+    setBootSyncStatus('error','Não foi possível atualizar. Usando o último cache válido.');
+    startupActive=false;
+    await navigate(desiredURL(),{replace:true});
+  }finally{clearInterval(startupSloganTimer);}
+}
 
 function routeFor(url){return url.origin===base.origin&&url.pathname.startsWith(base.pathname)?routes[url.pathname.slice(base.pathname.length)]:undefined;}
 function desiredURL(){const url=new URL(base);const hash=location.hash.slice(1);if(hash.startsWith('/'))return new URL(hash.slice(1),base);return new URL('index.html'+location.search,base);}
@@ -107,5 +186,5 @@ retry.onclick=()=>navigate(lastRequested||desiredURL(),{replace:true});
 window.addEventListener('sahmt:auth-retry',()=>navigate(desiredURL(),{replace:true}));
 window.addEventListener('sahmt:account-change',()=>{accountGeneration++;pendingPages.clear();for(const p of pages.values())p.ctx.dispose();pages.clear();current=null;navigate(desiredURL(),{replace:true});});
 registerPwa({base}).catch(()=>{});
-navigate(desiredURL(),{replace:true});
+startStartupFlow();
 
