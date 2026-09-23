@@ -39,20 +39,20 @@ function setBootSyncStatus(state,text){
 function startStartupSlogans(runId){
   clearInterval(startupSloganTimer);
   const slogans=[['Gestão Responsável!','#16803d'],['Gestão Eficiente!','#1762a1'],['Gestão na palma da Mão!','#c96f00']];
-  const started=performance.now();
+  const started=performance.now(),SLOGAN_DURATION=2600;
   const show=()=>{
     if(runId!==startupRunId||!bootSlogan)return;
     const elapsed=performance.now()-started;
-    const index=Math.floor(elapsed/2000);
+    const index=Math.floor(elapsed/SLOGAN_DURATION);
     if(index>=3){bootSlogan.textContent='';return;}
     bootSlogan.textContent=slogans[index][0];
     bootSlogan.style.color=slogans[index][1];
     bootSlogan.style.animation='none';
     void bootSlogan.offsetWidth;
-    bootSlogan.style.animation='sahmt-slogan-in 2s ease both';
+    bootSlogan.style.animation='sahmt-slogan-in 2.6s ease both';
   };
   show();
-  startupSloganTimer=setInterval(show,2000);
+  startupSloganTimer=setInterval(show,SLOGAN_DURATION);
 }
 function delay(ms){return new Promise(resolve=>setTimeout(resolve,ms));}
 function updateStartupResult(results){
@@ -73,7 +73,7 @@ async function runStartupSync(runId){
   const wrapped=jobs.map(({key,run})=>run().then(value=>{
     if(key==='checklist'&&(!value||!Array.isArray(value.items)))throw new Error('Resposta inválida do Checklist');
     if(key==='etiquetas'&&!Array.isArray(value))throw new Error('Resposta inválida de Etiquetas');
-    results[key]='ok';if(runId===startupRunId)updateStartupResult(results);return value;
+    results[key]='ok';if(key==='checklist') { checklistWarmDay=day; checklistWarmAt=Date.now(); } if(runId===startupRunId)updateStartupResult(results);return value;
   }).catch(error=>{
     results[key]='error';if(runId===startupRunId){console.warn('[SAHMT startup]',key,error?.message||error);updateStartupResult(results);}throw error;
   }));
@@ -98,7 +98,7 @@ async function startStartupFlow(){
     const outcome=await runStartupSync(runId);
     if(runId!==startupRunId||startupNavigationDone)return;
     startupNavigationDone=true;
-    await navigate(new URL('apps/checklist/',base),{replace:true});
+    await navigate(new URL('index.html',base),{replace:true});
     startupActive=false;
     finishBoot(outcome.timedOut?'Sincronização parcial.':'');
   }catch(error){
