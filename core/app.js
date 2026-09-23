@@ -57,7 +57,7 @@ function startStartupSlogans(runId){
 function delay(ms){return new Promise(resolve=>setTimeout(resolve,ms));}
 function updateStartupResult(results){
   const report=results.report;
-  if(report==='ok')setBootSyncStatus('updated','Relatório Diário Checklist atualizado.');
+  if(report==='ok')setBootSyncStatus('updated','');
   else if(report==='error')setBootSyncStatus('error','Relatório Diário Checklist indisponível. Usando o último cache válido.');
   else setBootSyncStatus('syncing','Sincronizando Relatório Diário Checklist…');
 }
