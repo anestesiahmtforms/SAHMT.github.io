@@ -345,20 +345,31 @@ const {ChecklistLocalStore}=await import('../checklist-local-store.js');
   function showMaintenance(item){if(!canDirectRecord())return;const card=[...$('equipmentList').children].find(node=>node.querySelector('[data-unit-id]')?.dataset.unitId===String(item.id ?? ''));const banner=card?.querySelector('.status-banner');if(!banner)return;if(!banner.hidden){closeArsenalBanners();return;}closeArsenalBanners();banner.replaceChildren();addText(banner,'strong','Inativo');const activate=document.createElement('button');activate.type='button';activate.className='status-check-button';activate.textContent='Ativar';activate.setAttribute('aria-label',`Ativar ${item.name}`);activate.onclick=()=>{syncMaintenanceDay(report?.day || dateKey()).add(unitKey(item));closeArsenalBanners();if(report)renderReport(report);};banner.append(activate);fitStatusBanner(card,banner);card.classList.add('has-open-status');banner.hidden=false;}
   function openReportDialog(){closeArsenalActionBanner();const dialog=$('reportDialog');const title=dialog?.querySelector('.report-title h2');if(title)title.textContent='RELATÓRIO DIÁRIO - CHECKLIST';dialog.showModal();dialog.focus({preventScroll:true});}
   let reportRequest = 0;
+  function showReportLoading(message='Abrindo relatório; sincronizando em segundo plano…'){
+    report=null;closeArsenalBanners();closeArsenalInfoBanner();closeRecheckPromptBanner();$('sign').disabled=true;$('signForm').hidden=true;$('reportSignActions').className='report-sign-actions mode-history';$('responsible').hidden=false;$('responsible').className='signature responsible-compact';$('responsible').replaceChildren();
+    addText($('responsible'),'strong','RESPONSÁVEL DO DIA');addText($('responsible'),'p','Carregando…');
+    $('signatureStatus').replaceChildren();
+    $('equipmentList').replaceChildren();const loading=addText($('equipmentList'),'p',message);loading.className='report-loading-state';loading.setAttribute('role','status');loading.setAttribute('aria-live','polite');
+  }
+  function showReportLoadError(){
+    $('equipmentList').replaceChildren();const box=document.createElement('div');box.className='report-loading-state report-loading-error';
+    addText(box,'p','O relatório continua aberto, mas os dados ainda não chegaram. O contador segue indicando o estado da conexão.');
+    const retry=addText(box,'button','Tentar novamente');retry.type='button';retry.className='soft-button';retry.onclick=()=>{void loadReport();};
+    $('equipmentList').append(box);$('signatureStatus').replaceChildren();$('responsible').replaceChildren();addText($('responsible'),'strong','RESPONSÁVEL DO DIA');addText($('responsible'),'p','Aguardando sincronização…');
+  }
   async function loadReport(){
     const day=$('reportDate').value;
-    if(!isIsoDay(day)){$('reportDate').value=lastValidReportDay || dateKey();return;}
-    await authPayload();
+    if(!isIsoDay(day)){$('reportDate').value=lastValidReportDay || dateKey();return null;}
     const request=++reportRequest,key=userDayKey(day),serviceKey='checklist.report:'+JSON.stringify({day}),stored=Services.store.peek(serviceKey),owner=sessionOwner();
-    const disk=owner.uid?await ChecklistLocalStore.getReport(day,owner.uid).catch(()=>null):null;
-    let cached=reportCache.get(key)?.data||(stored?rememberReport(window.SAHMT_CHECKLIST_CONTRACT({ok:true,...stored},'report',{day})):disk?.data||null);
-    if(cached){try{cached=await overlayPendingOperations(window.SAHMT_CHECKLIST_CONTRACT(cached,'report',{day}));}catch{cached=null;}}
-    const unsettled=owner.email?await ChecklistLocalStore.listOperations({day,ownerEmail:owner.email}):[];if(unsettled.length)blockedChecklistDays.add(day);else blockedChecklistDays.delete(day);
-    lastValidReportDay=day;reportSyncPending=!!cached;startReportSync();
-    if(cached){renderReport({...cached,canSign:false});}
-    else{$('sign').disabled=true;report=null;$('equipmentList').replaceChildren();$('responsible').replaceChildren();$('signatureStatus').replaceChildren();}
+    let cached=reportCache.get(key)?.data||(stored?rememberReport(window.SAHMT_CHECKLIST_CONTRACT({ok:true,...stored},'report',{day})):null);
+    if(cached){try{cached=window.SAHMT_CHECKLIST_CONTRACT(cached,'report',{day});}catch{cached=null;}}
+    lastValidReportDay=day;reportSyncPending=true;startReportSync();
+    if(cached)renderReport({...cached,canSign:false});else showReportLoading();
     const refreshInBackground=async()=>{
       try{
+        if(cached){try{cached=await overlayPendingOperations(cached);if(request===reportRequest)renderReport({...cached,canSign:false});}catch{cached=null;}}
+        if(!cached&&owner.uid){const disk=await ChecklistLocalStore.getReport(day,owner.uid).catch(()=>null);if(disk?.data){try{cached=await overlayPendingOperations(window.SAHMT_CHECKLIST_CONTRACT(disk.data,'report',{day}));}catch{cached=null;}if(cached&&request===reportRequest)renderReport({...cached,canSign:false});}}
+        const unsettled=owner.email?await ChecklistLocalStore.listOperations({day,ownerEmail:owner.email}):[];if(unsettled.length)blockedChecklistDays.add(day);else blockedChecklistDays.delete(day);
         const alreadyRefreshing=Services.store.pending.has(serviceKey);
         const data=await api('report',{day},{force:!alreadyRefreshing,timeoutMs:15000,cacheTtlMs:CHECKLIST_REPORT_CACHE_MS});
         if(request!==reportRequest)return;
@@ -367,15 +378,11 @@ const {ChecklistLocalStore}=await import('../checklist-local-store.js');
         if(request!==reportRequest)return;
         $('sign').disabled=true;failReportSync();
         if(cached){reportSyncPending=true;renderReport({...cached,canSign:false});return;}
-        throw error;
+        showReportLoadError();
       }
     };
-    if(cached){void refreshInBackground().catch(()=>{});return cached;}
-    try{
-      const data=await api('report',{day},{timeoutMs:15000,cacheTtlMs:CHECKLIST_REPORT_CACHE_MS});
-      if(request!==reportRequest)return;
-      reportSyncPending=false;renderReport(data);pendingSignature=null;finishReportSync();
-    }catch(error){if(request!==reportRequest)return;$('sign').disabled=true;failReportSync();throw error;}
+    void refreshInBackground();
+    return cached||null;
   }
   async function loadMonthly(){
     const month=$('reportMonth').value;if(!month)return;$('monthlyDays').replaceChildren();$('monthlySummary').textContent='Consultando o mês…';
@@ -491,4 +498,5 @@ const {ChecklistLocalStore}=await import('../checklist-local-store.js');
 })();
 
 }
+
 
