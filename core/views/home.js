@@ -1,7 +1,7 @@
 export async function mount(ctx){
 const {Services,localStorage,sessionStorage,document,window,navigator,location,history,fetch,setTimeout,clearTimeout,setInterval,clearInterval,requestAnimationFrame,cancelAnimationFrame}=ctx;
 
-(async function () {
+return (async function () {
   const fallbackData = window.SAHMT_DATA;
   const contactsPayload = window.SAHMT_CONTACTS;
   const fallbackNoticesPayload = {
