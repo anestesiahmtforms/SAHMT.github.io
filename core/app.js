@@ -56,34 +56,30 @@ function startStartupSlogans(runId){
 }
 function delay(ms){return new Promise(resolve=>setTimeout(resolve,ms));}
 function updateStartupResult(results){
-  const checklist=results.checklist,etiquetas=results.etiquetas;
-  if(checklist==='ok'&&etiquetas==='ok')setBootSyncStatus('updated','Dados atualizados.');
-  else if(checklist==='ok'&&etiquetas==='error')setBootSyncStatus('partial','Checklist atualizado. Etiquetas indisponível.');
-  else if(checklist==='error'&&etiquetas==='ok')setBootSyncStatus('partial','Etiquetas atualizada. Checklist indisponível.');
-  else if(checklist==='error'&&etiquetas==='error')setBootSyncStatus('error','Falha na atualização. Usando o último cache válido.');
-  else setBootSyncStatus('syncing','Sincronizando Checklist e Etiquetas…');
+  const report=results.report;
+  if(report==='ok')setBootSyncStatus('updated','Relatório Diário Checklist atualizado.');
+  else if(report==='error')setBootSyncStatus('error','Relatório Diário Checklist indisponível. Usando o último cache válido.');
+  else setBootSyncStatus('syncing','Sincronizando Relatório Diário Checklist…');
 }
 async function runStartupSync(runId){
-  const day=localDayKey(),results={checklist:'pending',etiquetas:'pending'};
+  const day=localDayKey(),results={report:'pending'};
   const checklistContract=window.SAHMT_CHECKLIST_CONTRACT||(await import('./checklist-contract.js')).checklistResponse;
   const jobs=[
-    {key:'checklist',run:async()=>{const raw=await Services.checklist('report',{day},{force:true,timeoutMs:8000,cacheTtlMs:CHECKLIST_REPORT_CACHE_MS});return checklistContract(raw,'report',{day});}},
-    {key:'etiquetas',run:()=>Services.labelEntries({date:day})}
+    {key:'report',run:async()=>{const raw=await Services.checklist('report',{day},{force:true,timeoutMs:8000,cacheTtlMs:CHECKLIST_REPORT_CACHE_MS});return checklistContract(raw,'report',{day});}}
   ];
   const wrapped=jobs.map(({key,run})=>run().then(value=>{
-    if(key==='checklist'&&(!value||!Array.isArray(value.items)))throw new Error('Resposta inválida do Checklist');
-    if(key==='etiquetas'&&!Array.isArray(value))throw new Error('Resposta inválida de Etiquetas');
-    results[key]='ok';if(key==='checklist') { checklistWarmDay=day; checklistWarmAt=Date.now(); } if(runId===startupRunId)updateStartupResult(results);return value;
+    if(!value||!Array.isArray(value.items))throw new Error('Resposta inválida do Relatório Diário Checklist');
+    results[key]='ok';checklistWarmDay=day;checklistWarmAt=Date.now();if(runId===startupRunId)updateStartupResult(results);return value;
   }).catch(error=>{
-    results[key]='error';if(runId===startupRunId){console.warn('[SAHMT startup]',key,error?.message||error);updateStartupResult(results);}throw error;
+    results[key]='error';if(runId===startupRunId){console.warn('[SAHMT startup] Relatório Diário Checklist',error?.message||error);updateStartupResult(results);}throw error;
   }));
-  setBootSyncStatus('syncing','Sincronizando Checklist e Etiquetas…');
+  setBootSyncStatus('syncing','Sincronizando Relatório Diário Checklist…');
   const all=Promise.allSettled(wrapped);
   const started=performance.now();
   const completed=await Promise.race([all.then(()=>true),delay(STARTUP_MAX_DURATION).then(()=>false)]);
   const remaining=Math.max(0,STARTUP_BANNER_DURATION-(performance.now()-started));
   if(remaining)await delay(remaining);
-  const timedOut=!completed&&[results.checklist,results.etiquetas].some(value=>value==='pending');
+  const timedOut=!completed&&results.report==='pending';
   if(runId===startupRunId){
     if(timedOut)setBootSyncStatus('timeout','Tempo limite atingido. Usando o último cache válido.');
     else updateStartupResult(results);
