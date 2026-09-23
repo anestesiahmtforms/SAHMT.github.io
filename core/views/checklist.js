@@ -291,17 +291,13 @@ const {ChecklistLocalStore}=await import('../checklist-local-store.js');
   function appendSignatureResult(parent,data,state){
     const panel=document.createElement('section');panel.className='signature-result-panel';
     const title=addText(panel,'strong',data.signature?.incomplete?'ASSINATURA SEM CONCLUIR':'ASSINATURA REGISTRADA');title.className='signature-result-title';
-    const responsibleEmail=normalizedEmail(data.responsible?.email);
-    if(responsibleEmail){
-      const responsibleState=state==='responsible'?'responsible':'other';
-      appendSignaturePerson(panel,'Responsável do dia',responsibleEmail,'responsible-email signature-'+responsibleState);
-    }
     const signer=normalizedEmail(data.signature?.email);
     appendSignaturePerson(panel,'Assinado por',signer || data.signature?.email,'signer-email signature-signed');
     const reason=signatureReason(data.signature);
     if(reason){const reasonLine=document.createElement('p');reasonLine.className='signature-result-line';reasonLine.innerHTML='<strong>Justificativa escolhida:</strong> ';reasonLine.append(document.createTextNode(reason));panel.append(reasonLine);}
     if(data.signature.incomplete){const description=signatureDescription(data.signature),descriptionLine=document.createElement('p');descriptionLine.className='signature-result-line signature-description-line';descriptionLine.innerHTML='<strong>Motivo descrito:</strong> ';descriptionLine.append(document.createTextNode(description || 'Não informado.'));panel.append(descriptionLine);}
-    const time=document.createElement('p');time.className='signature-result-time';time.textContent='Horário da assinatura: '+new Intl.DateTimeFormat('pt-BR',{timeZone:'America/Sao_Paulo',day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit',hour12:false}).format(new Date(data.signature.at)).replace(',','');panel.append(time);
+    const time=document.createElement('p');time.className='signature-result-time';time.textContent='Assinado em: '+new Intl.DateTimeFormat('pt-BR',{timeZone:'America/Sao_Paulo',day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit',hour12:false}).format(new Date(data.signature.at)).replace(',','');panel.append(time);
+    const resultButton=addText(panel,'button',data.signature.incomplete?'Assinado sem concluir':'Assinado após concluído');resultButton.type='button';resultButton.disabled=true;resultButton.className='signature-result-button '+(data.signature.incomplete?'incomplete':'complete');
     parent.append(panel);
   }
   function canDirectRecord(){return Services.permission("checklistDirect");}  function closeIncompleteSignatureBanner(){const banner=$('incompleteSignatureBanner');if(!banner)return;banner.hidden=true;$('incompleteJustification').value='';$('incompleteJustification').readOnly=false;$('confirmIncompleteSignature').hidden=true;$('confirmIncompleteSignature').disabled=false;$('cancelIncompleteSignature').textContent='Cancelar';setSignatureReason('incompleteSignatureReasonGroup');}

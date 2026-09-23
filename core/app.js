@@ -11,7 +11,6 @@ const pages=new Map(),pendingPages=new Map(),vendors=new Map(),definitions=new M
 const shellState=document.getElementById('shell-state'),status=document.getElementById('shell-status'),retry=document.getElementById('shell-retry');
 const root=document.getElementById('app');
 const bootScreen=document.getElementById('boot-screen'),bootMessage=document.getElementById('boot-message'),bootSlogan=document.getElementById('boot-slogan'),bootSyncStatus=document.getElementById('boot-sync-status');
-const STARTUP_BANNER_DURATION=10000,STARTUP_MAX_DURATION=10000;
 let bootFinished=false,startupActive=true,startupRunId=0,startupNavigationDone=false,startupSloganTimer=null;
 function finishBoot(message='',force=false){if(bootFinished)return;if(startupActive&&!force)return;bootFinished=true;if(message&&bootMessage)bootMessage.textContent=message;if(bootScreen)bootScreen.hidden=true;globalThis.SAHMT_APP_READY=true;globalThis.SAHMT_PWA_READY?.();}
 const bootSlowTimer=setTimeout(()=>{if(!bootFinished&&bootMessage)bootMessage.textContent='Ainda carregando. Verifique sua conexão e aguarde…';},8000);
@@ -54,7 +53,6 @@ function startStartupSlogans(runId){
   show();
   startupSloganTimer=setInterval(show,SLOGAN_DURATION);
 }
-function delay(ms){return new Promise(resolve=>setTimeout(resolve,ms));}
 function updateStartupResult(results){
   const report=results.report;
   if(report==='ok')setBootSyncStatus('updated','');
@@ -64,39 +62,28 @@ function updateStartupResult(results){
 async function runStartupSync(runId){
   const day=localDayKey(),results={report:'pending'};
   const checklistContract=window.SAHMT_CHECKLIST_CONTRACT||(await import('./checklist-contract.js')).checklistResponse;
-  const jobs=[
-    {key:'report',run:async()=>{const raw=await Services.checklist('report',{day},{force:true,timeoutMs:8000,cacheTtlMs:CHECKLIST_REPORT_CACHE_MS});return checklistContract(raw,'report',{day});}}
-  ];
-  const wrapped=jobs.map(({key,run})=>run().then(value=>{
+  checklistWarmDay=day;checklistWarmAt=Date.now();checklistWarmPending=true;
+  setBootSyncStatus('syncing','Sincronizando Relatório Diário Checklist em segundo plano…');
+  try{
+    const raw=await Services.checklist('report',{day},{force:true,timeoutMs:8000,cacheTtlMs:CHECKLIST_REPORT_CACHE_MS});
+    const value=checklistContract(raw,'report',{day});
     if(!value||!Array.isArray(value.items))throw new Error('Resposta inválida do Relatório Diário Checklist');
-    results[key]='ok';checklistWarmDay=day;checklistWarmAt=Date.now();if(runId===startupRunId)updateStartupResult(results);return value;
-  }).catch(error=>{
-    results[key]='error';if(runId===startupRunId){console.warn('[SAHMT startup] Relatório Diário Checklist',error?.message||error);updateStartupResult(results);}throw error;
-  }));
-  setBootSyncStatus('syncing','Sincronizando Relatório Diário Checklist…');
-  const all=Promise.allSettled(wrapped);
-  const started=performance.now();
-  const completed=await Promise.race([all.then(()=>true),delay(STARTUP_MAX_DURATION).then(()=>false)]);
-  const remaining=Math.max(0,STARTUP_BANNER_DURATION-(performance.now()-started));
-  if(remaining)await delay(remaining);
-  const timedOut=!completed&&results.report==='pending';
-  if(runId===startupRunId){
-    if(timedOut)setBootSyncStatus('timeout','Tempo limite atingido. Usando o último cache válido.');
-    else updateStartupResult(results);
-  }
-  return {results,timedOut};
+    results.report='ok';checklistWarmAt=Date.now();if(runId===startupRunId)updateStartupResult(results);return {results,timedOut:false};
+  }catch(error){
+    results.report='error';checklistWarmAt=0;if(runId===startupRunId){console.warn('[SAHMT startup] Relatório Diário Checklist',error?.message||error);updateStartupResult(results);}return {results,timedOut:false};
+  }finally{checklistWarmPending=false;}
 }
 async function startStartupFlow(){
   const runId=++startupRunId;
   startStartupSlogans(runId);
   try{
     await window.SAHMT_AUTH.requireAccess({moduleId:'SAHMT',pageId:'startup'});
-    const outcome=await runStartupSync(runId);
+    void runStartupSync(runId);
     if(runId!==startupRunId||startupNavigationDone)return;
     startupNavigationDone=true;
-    await navigate(new URL('index.html',base),{replace:true});
+    await navigate(desiredURL(),{replace:true});
     startupActive=false;
-    finishBoot(outcome.timedOut?'Sincronização parcial.':'');
+    finishBoot();
   }catch(error){
     if(runId!==startupRunId)return;
     console.warn('[SAHMT startup] falha total',error?.message||error);
@@ -137,6 +124,25 @@ async function mountPage(id,url){
   const host=document.createElement('section');host.hidden=true;host.dataset.module=id;host.setAttribute('aria-label',names[id]);
   const shadow=host.attachShadow({mode:'open'}),style=document.createElement('style');style.textContent=spec.css.replaceAll('__SAHMT_BASE__',base.href)+'\n:host{display:block} :host([hidden]){display:none!important} [hidden]{display:none!important} [data-auth-user]{display:block!important;font-size:.8rem;line-height:1.15;overflow-wrap:anywhere;padding:0!important;background-image:none!important;background-position:initial!important;background-size:initial!important} [data-auth-user]::before{content:none!important;display:none!important} .ecosystem-auth-indicator{display:flex;align-items:center;justify-content:center;gap:5px;min-height:15px;margin-top:4px;color:#1762a1;font-size:.55rem;font-weight:850;line-height:1;letter-spacing:.03em} .ecosystem-auth-indicator[hidden]{display:none!important} .ecosystem-auth-indicator__dot{display:block;width:10px;height:10px;flex:0 0 10px;border-radius:50%;background:#22c55e;box-shadow:0 0 0 2px rgba(34,197,94,.2),0 1px 4px rgba(21,128,61,.24)} .ecosystem-auth-indicator[data-state=pending]{color:#b51f2b}.ecosystem-auth-indicator[data-state=pending] .ecosystem-auth-indicator__dot{background:#ef4444;box-shadow:0 0 0 2px rgba(239,68,68,.22),0 1px 4px rgba(153,27,27,.24);animation:ecosystem-auth-pulse 850ms ease-in-out infinite}.ecosystem-auth-indicator[data-state=error]{color:#b51f2b}.ecosystem-auth-indicator[data-state=error] .ecosystem-auth-indicator__dot{background:#ef4444;box-shadow:0 0 0 2px rgba(239,68,68,.22),0 1px 4px rgba(153,27,27,.24)} @keyframes ecosystem-auth-pulse{0%,100%{transform:scale(.82);opacity:.62}50%{transform:scale(1.18);opacity:1}}';
   if(id==='checklist')style.textContent+='\n@media(max-width:680px){dialog.report-dialog #reportSignActions.mode-signed-complete,dialog.report-dialog #reportSignActions.mode-signed-incomplete,dialog.report-dialog #reportSignActions.mode-history,dialog.report-dialog #reportSignActions.mode-stale,dialog.report-dialog #reportSignActions.mode-locked{display:flex!important;flex:0 0 auto!important;flex-direction:column!important;width:100%!important;min-height:0!important;margin:3px 0!important;gap:4px!important}dialog.report-dialog #reportSignActions.mode-signed-complete #signForm,dialog.report-dialog #reportSignActions.mode-signed-incomplete #signForm,dialog.report-dialog #reportSignActions.mode-history #signForm,dialog.report-dialog #reportSignActions.mode-stale #signForm,dialog.report-dialog #reportSignActions.mode-locked #signForm{display:none!important}dialog.report-dialog #reportSignActions.mode-signed-complete #signatureStatus,dialog.report-dialog #reportSignActions.mode-signed-incomplete #signatureStatus,dialog.report-dialog #reportSignActions.mode-history #signatureStatus,dialog.report-dialog #reportSignActions.mode-stale #signatureStatus,dialog.report-dialog #reportSignActions.mode-locked #signatureStatus{display:flex!important;flex-direction:column!important;width:100%!important;min-height:0!important;height:auto!important}dialog.report-dialog #reportSignActions .signature-status-wrap,dialog.report-dialog #signatureStatus .signature-result-panel{display:flex!important;flex-direction:column!important;width:100%!important;min-height:0!important;height:auto!important;overflow:visible!important}}';
+  if(id==='checklist')style.textContent+='\ndialog.report-dialog #responsible[hidden]{display:none!important}';
+  if(id==='etiquetas')style.textContent+=`\n@media(max-width:640px){#edit-overlay.edit-overlay .edit-card>.confirm-actions{margin-top:4px!important}}\n@media(max-width:390px) and (max-height:700px){
+    #edit-overlay.edit-overlay .edit-card{padding:max(6px,env(safe-area-inset-top,0px)) 7px max(6px,env(safe-area-inset-bottom,0px))!important}
+    #edit-overlay.edit-overlay .edit-card>.section-title h2{font-size:.82rem!important;line-height:1.05!important}
+    #edit-overlay.edit-overlay .edit-context{margin-top:3px!important;padding:4px 6px!important;font-size:.56rem!important;line-height:1.15!important}
+    #edit-overlay.edit-overlay .edit-card>#edit-summary{flex:1 1 0%!important;min-height:0!important;margin-top:3px!important;overflow:hidden!important}
+    #edit-overlay.edit-overlay #edit-summary .confirm-edit-grid{gap:1px!important}
+    #edit-overlay.edit-overlay #edit-summary .confirm-edit-grid>label:not(.full-width):not(:has(textarea)):not(.edit-plantonistas-field){grid-column:auto!important}
+    #edit-overlay.edit-overlay #edit-summary .confirm-edit-grid>label{padding:2px 4px!important;gap:1px!important}
+    #edit-overlay.edit-overlay #edit-summary .confirm-edit-grid>label>span{font-size:.5rem!important;line-height:1!important}
+    #edit-overlay.edit-overlay #edit-summary .confirm-edit-grid input,#edit-overlay.edit-overlay #edit-summary .confirm-edit-grid select{height:28px!important;min-height:28px!important;padding:2px 4px!important}
+    #edit-overlay.edit-overlay #edit-summary .edit-plantonistas-grid{grid-template-columns:repeat(6,minmax(0,1fr))!important;grid-auto-rows:24px!important;gap:2px!important;padding:2px!important}
+    #edit-overlay.edit-overlay #edit-summary .edit-plantonistas-grid label{height:24px!important;min-height:24px!important;padding:1px!important;font-size:.56rem!important}
+    #edit-overlay.edit-overlay #edit-summary .confirm-edit-grid>label:has(#edit-observacoes){min-height:42px!important}
+    #edit-overlay.edit-overlay #edit-summary .confirm-edit-grid #edit-observacoes{height:34px!important;min-height:34px!important;padding:2px 4px!important}
+    #edit-overlay.edit-overlay .edit-card>.confirm-actions,#edit-overlay.edit-overlay .edit-card>.panel-base-action{margin-top:3px!important}
+    #edit-overlay.edit-overlay .edit-card>.panel-base-action{padding-top:3px!important}
+    #edit-overlay.edit-overlay .confirm-actions>#edit-save,#edit-overlay.edit-overlay .panel-home-button{min-height:34px!important;padding:5px 8px!important}
+  }`;
   const body=document.createElement('div');body.dataset.moduleBody='';body.innerHTML=spec.html;
   const moduleBase=new URL(spec.base,base);
   for(const el of body.querySelectorAll('[href],[src],[poster],[action]'))for(const key of ['href','src','poster','action']){const value=el.getAttribute(key);if(value&&!value.startsWith('#')&&!value.startsWith('data:'))el.setAttribute(key,new URL(value,moduleBase).href);}
