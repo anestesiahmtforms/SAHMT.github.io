@@ -65,8 +65,9 @@ function updateStartupResult(results){
 }
 async function runStartupSync(runId){
   const day=localDayKey(),results={checklist:'pending',etiquetas:'pending'};
+  const checklistContract=window.SAHMT_CHECKLIST_CONTRACT||(await import('./checklist-contract.js')).checklistResponse;
   const jobs=[
-    {key:'checklist',run:()=>Services.checklist('report',{day},{force:true,timeoutMs:8000,cacheTtlMs:CHECKLIST_REPORT_CACHE_MS})},
+    {key:'checklist',run:async()=>{const raw=await Services.checklist('report',{day},{force:true,timeoutMs:8000,cacheTtlMs:CHECKLIST_REPORT_CACHE_MS});return checklistContract(raw,'report',{day});}},
     {key:'etiquetas',run:()=>Services.labelEntries({date:day})}
   ];
   const wrapped=jobs.map(({key,run})=>run().then(value=>{
