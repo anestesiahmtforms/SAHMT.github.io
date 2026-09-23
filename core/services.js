@@ -22,10 +22,8 @@ export class Services {
  async schedule(){return this.read('escala.list');}
  async highlights(){return (await this.read('escala.highlights')).highlights;}
  async mark(date,sigla,marked){return (await this.write('escala.mark',{date,sigla,marked})).highlights;}
- async labelEntries(data,{force=false,cacheTtlMs=15000,timeoutMs=12000}={}){const r=await this.read('etiquetas.list',data,force,{cacheTtlMs,timeoutMs});return this.projectLabelRows(r.entries);}
- projectLabelRows(entries=[]){return entries.map((r,i)=>{const edits=Array.isArray(r.editHistory)?r.editHistory:[];return {...r,rowNumber:i+2,criadoEm:r.createdAt,criadoPor:r.createdBy,editadoEm:edits.length?r.updatedAt:'',editadoPor:edits.length?r.updatedBy:'',resumoEdicao:edits.map(formatLabelEditHistoryLine).join('\n')};});}
- async saveLabel(payload,{update=false,queue=false,timeoutMs=12000}={}){const {action,rowNumber,userAgent,...data}=safePayload(payload);return this.write(update?'etiquetas.update':'etiquetas.save',data,{queue:false,timeoutMs});}
- discardPending(action){return this.outbox.discardAction?.(action)||0;}
+ async labelEntries(data){const r=await this.read('etiquetas.list',data,true);return r.entries.map((r,i)=>{const edits=Array.isArray(r.editHistory)?r.editHistory:[];return {...r,rowNumber:i+2,criadoEm:r.createdAt,criadoPor:r.createdBy,editadoEm:edits.length?r.updatedAt:'',editadoPor:edits.length?r.updatedBy:'',resumoEdicao:edits.map(formatLabelEditHistoryLine).join('\n')};});}
+ async saveLabel(payload,{update=false,queue=true}={}){const {action,rowNumber,userAgent,...data}=safePayload(payload);return this.write(update?'etiquetas.update':'etiquetas.save',data,{queue:!update&&queue});}
  async eventRecords(){const {records}=await this.read('eventos.list',{},true);return records.map((r,i)=>{const edits=Array.isArray(r.history)?r.history.filter(x=>x&&x.kind!=='launch'&&Array.isArray(x.fields)&&x.fields.length):[];return {...r,rowIndex:i+2,timestampRaw:r.createdAt,timestamp:r.createdAt,dataDoEvento:br(r.data),dataDoEventoKey:r.data,tipo:r.tipoEvento,multiplo:String(r.multiploAtraso),valor:Number(r.valor||0).toLocaleString('pt-BR',{minimumFractionDigits:2}),origem:r.source,history:edits.map(formatEventEditHistoryLine).join('\n\n'),registeredBy:r.createdBy};});}
  eventPayload(p){return {data:iso(p.dataDoEvento||p.data),membro:p.membroAusenteAtrasado,tipoEvento:p.tipoDeEvento,descricao:p.descricaoDoEvento,multiploAtraso:p.multiploDoAtraso,substituto:p.membroSubstituto,turno:p.turno,pagador:p.pagador,credor:p.resultadoCredor,valor:p.valorAPagar,...(p.siglaEvento?{siglaEvento:p.siglaEvento}:{}),...(p.operation==='update'?{id:p.id,version:p.version}:{})};}
  async saveEvent(p){return this.write(p.operation==='update'?'eventos.update':'eventos.save',this.eventPayload(p),{queue:p.operation!=='update'});}
@@ -34,7 +32,7 @@ export class Services {
  async training(action,payload={}){const result=action==='catalog'?await this.read('treinamentos.list',{},true):await this.write('treinamentos.'+action,payload);return {ok:true,apiVersion:1,...result};}
  async activities(action,payload={}){return action==='interact'?this.write('activities.interact',payload):this.read('activities.'+action,payload,true);}
  pending(action){return this.outbox.read().filter(item=>item.action===action);}
- async flush(){await this.confirmAccount();this.outbox.discardAction?.('etiquetas.save');const result=await this.outbox.flush();if(result.sent)this.store.invalidate();return result;}
+ async flush(){await this.confirmAccount();const result=await this.outbox.flush();if(result.sent)this.store.invalidate();return result;}
 }
 
 const LABEL_EDIT_FIELD_NAMES=Object.freeze({data:'Data',nomePaciente:'Nome do Paciente',convenio:'Convenio',cirurgia:'Cirurgia',atendimento:'Atendimento',tipo:'Tipo',credor:'Credor',plantonistas:'Plantonista(s)',observacoes:'Observacoes',valor:'Valor',duplicateJustification:'Justificativa'});
@@ -70,3 +68,4 @@ function formatEventEditHistoryLine(entry){
  }).filter(Boolean).join('; ');
  return `Data: ${data}\nResponsavel: ${responsible}\nAlteracao: ${changes||'Registro editado.'}`;
 }
+

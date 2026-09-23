@@ -4,17 +4,18 @@ export async function registerPwa({base,sw=globalThis.navigator?.serviceWorker,d
   if(!sw)return;
   const button=document.getElementById('shell-update'),dialog=document.getElementById('update-dialog');
   const apply=document.getElementById('update-apply'),later=document.getElementById('update-later'),status=document.getElementById('update-status');
-  let loadedController=sw.controller;
+  dialog?.setAttribute('data-startup-locked','');if(dialog)dialog.hidden=true;
+  let loadedController=sw.controller,appReady=Boolean(globalThis.SAHMT_APP_READY);
   let reg,busy=false,changed=false,reloaded=false,finishActivation=null,offered=false;
   const reloadOnce=()=>{if(!reloaded){reloaded=true;reload();}};
   const offer=()=>{
-    if(!reg||busy)return;
+    if(!reg||busy||!appReady)return;
     const available=Boolean(reg.waiting||changed);
     button.hidden=true;
     if(available&&!offered){
       offered=true;
       status.textContent='Uma nova versão do aplicativo está disponível.';
-      dialog.showModal();
+      if(dialog)dialog.hidden=false;dialog.showModal();
     }
   };
   sw.addEventListener('controllerchange',()=>{
@@ -23,7 +24,9 @@ export async function registerPwa({base,sw=globalThis.navigator?.serviceWorker,d
     finishActivation?.();
     offer();
   });
+  globalThis.SAHMT_PWA_READY=()=>{appReady=true;dialog?.removeAttribute('data-startup-locked');if(dialog)dialog.hidden=false;offer();};
   reg=await sw.register(new URL('service-worker.js',base),{scope:base.href,updateViaCache:'none'});
+  if(appReady){dialog?.removeAttribute('data-startup-locked');if(dialog)dialog.hidden=false;}
   const watch=worker=>worker?.addEventListener('statechange',offer);
   watch(reg.installing);reg.addEventListener('updatefound',()=>watch(reg.installing));offer();
   button.onclick=()=>{};

@@ -96,3 +96,4 @@ export class SessionManager {
   async resume(){this.networkChanged();if(!this.online()||!this.firebase.currentUser)return;if(this.snapshot().memberStatus!=='ACTIVE'||['TRUST_RENEWAL_PENDING','RENEWAL_DUE'].includes(this.snapshot().trustStatus))await this.bootstrap();}
   async logout(){await this.firebase.logout();return {revoked:true};}
 }
+

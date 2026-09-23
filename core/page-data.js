@@ -11,12 +11,10 @@ function cachedSchedule(services){
   }catch{return null;}
 }
 export async function pageData(id,services){
+  const bootstrap=id==='home'?(services.bootstrapData||await services.bootstrap()):{contacts:[]};
   const needsSchedule=['home','eventos'].includes(id);
   const schedule=needsSchedule?(services.store.peek('escala.list:{}')||cachedSchedule(services)):null;
-  const bootstrapPromise=id==='home'?(services.bootstrapData?Promise.resolve(services.bootstrapData):services.bootstrap()):Promise.resolve({contacts:[]});
-  // The screen paints from its local snapshot first. Its own refresh path updates
-  // the schedule after mount, so a slow Apps Script call never holds navigation.
   if(needsSchedule&&!schedule)services.schedule().catch(()=>{});
-  const bootstrap=await bootstrapPromise;
   return {bootstrap,schedule};
 }
+

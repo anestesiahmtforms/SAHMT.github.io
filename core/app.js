@@ -10,26 +10,34 @@ const names={offline:'Escala/Férias OFF LINE',home:'SAHMT',eventos:'Operacional
 const pages=new Map(),pendingPages=new Map(),vendors=new Map(),definitions=new Map();let current=null,sequence=0,accountGeneration=0,lastRequested=null;
 const shellState=document.getElementById('shell-state'),status=document.getElementById('shell-status'),retry=document.getElementById('shell-retry');
 const root=document.getElementById('app');
-const CHECKLIST_REPORT_CACHE_MS=30000;
+const bootScreen=document.getElementById('boot-screen'),bootMessage=document.getElementById('boot-message');
+let bootFinished=false;
+function finishBoot(message=''){if(bootFinished)return;bootFinished=true;if(message&&bootMessage)bootMessage.textContent=message;if(bootScreen)bootScreen.hidden=true;globalThis.SAHMT_APP_READY=true;globalThis.SAHMT_PWA_READY?.();}
+const bootSlowTimer=setTimeout(()=>{if(!bootFinished&&bootMessage)bootMessage.textContent='Ainda carregando. Verifique sua conexão e aguarde…';},8000);
+const CHECKLIST_REPORT_CACHE_MS=90000;
 let checklistWarmDay='',checklistWarmAt=0,checklistWarmPending=false;
 function localDayKey(){const parts=new Intl.DateTimeFormat('en-US',{timeZone:'America/Sao_Paulo',year:'numeric',month:'2-digit',day:'2-digit'}).formatToParts(new Date());const v=Object.fromEntries(parts.filter(p=>p.type!=='literal').map(p=>[p.type,p.value]));return `${v.year}-${v.month}-${v.day}`;}
 function warmChecklistReport(){
   if(document.visibilityState==='hidden'||navigator.onLine===false||!Services.user?.uid||checklistWarmPending)return;
-  const day=localDayKey(),now=Date.now();if(checklistWarmDay===day&&now-checklistWarmAt<CHECKLIST_REPORT_CACHE_MS)return;
+  const day=localDayKey(),now=Date.now();
+  if(checklistWarmDay===day&&now-checklistWarmAt<CHECKLIST_REPORT_CACHE_MS)return;
   checklistWarmDay=day;checklistWarmAt=now;checklistWarmPending=true;
-  Services.checklist('report',{day},{timeoutMs:12000,cacheTtlMs:CHECKLIST_REPORT_CACHE_MS})
+  Services.checklist('report',{day},{force:true,timeoutMs:15000,cacheTtlMs:CHECKLIST_REPORT_CACHE_MS})
     .catch(()=>{if(checklistWarmDay===day)checklistWarmAt=0;})
     .finally(()=>{checklistWarmPending=false;});
 }
+setInterval(warmChecklistReport,CHECKLIST_REPORT_CACHE_MS);
 document.addEventListener('visibilitychange',()=>{if(!document.hidden)warmChecklistReport();});
 window.addEventListener('online',warmChecklistReport);
+
 function routeFor(url){return url.origin===base.origin&&url.pathname.startsWith(base.pathname)?routes[url.pathname.slice(base.pathname.length)]:undefined;}
 function desiredURL(){const url=new URL(base);const hash=location.hash.slice(1);if(hash.startsWith('/'))return new URL(hash.slice(1),base);return new URL('index.html'+location.search,base);}
 function routeURL(url){return '#/'+url.pathname.slice(base.pathname.length)+url.search;}
+function fetchWithTimeout(input,timeoutMs=12000){const controller=new AbortController();const timer=setTimeout(()=>controller.abort(),timeoutMs);return fetch(input,{signal:controller.signal}).finally(()=>clearTimeout(timer)).catch(error=>{if(error.name==='AbortError')throw new Error('O aplicativo demorou a carregar. Verifique sua conexão e tente novamente.');throw error;});}
 async function vendor(src){const url=new URL(src,base).href;if(!vendors.has(url)){vendors.set(url,new Promise((resolve,reject)=>{const s=document.createElement('script');const fail=()=>{clearTimeout(timer);vendors.delete(url);s.remove();reject(new Error('Não foi possível carregar o recurso de PDF. Tente novamente.'));};const timer=setTimeout(fail,15000);s.src=url;s.onload=()=>{clearTimeout(timer);resolve();};s.onerror=fail;document.head.append(s);}));}return vendors.get(url);}
 async function definition(id){
   if(!definitions.has(id))definitions.set(id,Promise.all([
-    fetch(new URL(`views/${id}.json`,import.meta.url)).then(r=>{if(!r.ok)throw new Error('Não foi possível carregar esta área.');return r.json();}),
+    fetchWithTimeout(new URL(`views/${id}.json`,import.meta.url),12000).then(r=>{if(!r.ok)throw new Error('Não foi possível carregar esta área.');return r.json();}),
     import(`./views/${id}.js`)
   ]).then(([spec,mod])=>({spec,mod})).catch(error=>{definitions.delete(id);throw error;}));
   return definitions.get(id);
@@ -50,6 +58,7 @@ async function mountPage(id,url){
   if(generation!==accountGeneration)throw new Error('A conta foi alterada. Abra esta área novamente.');
   const host=document.createElement('section');host.hidden=true;host.dataset.module=id;host.setAttribute('aria-label',names[id]);
   const shadow=host.attachShadow({mode:'open'}),style=document.createElement('style');style.textContent=spec.css.replaceAll('__SAHMT_BASE__',base.href)+'\n:host{display:block} :host([hidden]){display:none!important} [hidden]{display:none!important} [data-auth-user]{font-size:.8rem;overflow-wrap:anywhere;padding-left:0!important;background-image:none!important;background-position:initial!important;background-size:initial!important} [data-auth-user]::before{content:none!important;display:none!important}';
+  if(id==='checklist')style.textContent+='\n@media(max-width:680px){dialog.report-dialog #reportSignActions.mode-signed-complete,dialog.report-dialog #reportSignActions.mode-signed-incomplete,dialog.report-dialog #reportSignActions.mode-history,dialog.report-dialog #reportSignActions.mode-stale,dialog.report-dialog #reportSignActions.mode-locked{display:flex!important;flex:0 0 auto!important;flex-direction:column!important;width:100%!important;min-height:0!important;margin:3px 0!important;gap:4px!important}dialog.report-dialog #reportSignActions.mode-signed-complete #signForm,dialog.report-dialog #reportSignActions.mode-signed-incomplete #signForm,dialog.report-dialog #reportSignActions.mode-history #signForm,dialog.report-dialog #reportSignActions.mode-stale #signForm,dialog.report-dialog #reportSignActions.mode-locked #signForm{display:none!important}dialog.report-dialog #reportSignActions.mode-signed-complete #signatureStatus,dialog.report-dialog #reportSignActions.mode-signed-incomplete #signatureStatus,dialog.report-dialog #reportSignActions.mode-history #signatureStatus,dialog.report-dialog #reportSignActions.mode-stale #signatureStatus,dialog.report-dialog #reportSignActions.mode-locked #signatureStatus{display:flex!important;flex-direction:column!important;width:100%!important;min-height:0!important;height:auto!important}dialog.report-dialog #reportSignActions .signature-status-wrap,dialog.report-dialog #signatureStatus .signature-result-panel{display:flex!important;flex-direction:column!important;width:100%!important;min-height:0!important;height:auto!important;overflow:visible!important}}';
   const body=document.createElement('div');body.dataset.moduleBody='';body.innerHTML=spec.html;
   const moduleBase=new URL(spec.base,base);
   for(const el of body.querySelectorAll('[href],[src],[poster],[action]'))for(const key of ['href','src','poster','action']){const value=el.getAttribute(key);if(value&&!value.startsWith('#')&&!value.startsWith('data:'))el.setAttribute(key,new URL(value,moduleBase).href);}
@@ -64,7 +73,7 @@ async function mountPage(id,url){
   try{prepareVendors(id).catch(()=>{});await mod.mount(page.ctx);if(generation!==accountGeneration)throw new Error('A conta foi alterada. Abra esta área novamente.');pages.set(id,page);updateUser(page);return page;}
   catch(error){page.ctx.dispose();throw error;}
 }
-function showError(error){shellState.hidden=false;status.textContent=error?.message||'Não foi possível abrir esta área.';status.hidden=false;retry.hidden=false;}
+function showError(error){finishBoot();shellState.hidden=false;status.textContent=error?.message||'Não foi possível abrir esta área.';status.hidden=false;retry.hidden=false;}
 export async function navigate(input,{replace=false,fromHistory=false}={}){
   const url=new URL(input,base),id=routeFor(url);if(!id){location.assign(url.href);return;}
   // Never carry credentials in application URLs.
@@ -76,7 +85,7 @@ export async function navigate(input,{replace=false,fromHistory=false}={}){
     const page=await loadPage(id,url);if(ticket!==sequence){if(current!==page)page.ctx.deactivate();return;}
     if(current&&current!==page)current.ctx.deactivate();current=page;page.ctx.activate(url);updateUser(page);
     if(!fromHistory){const target=routeURL(url);if(location.hash!==target)history[replace?'replaceState':'pushState']({},'',target);}
-    document.title=names[id]+' — SAHMT';status.hidden=true;preloadViews();
+    document.title=names[id]+' — SAHMT';status.hidden=true;finishBoot();clearTimeout(bootSlowTimer);preloadViews();
   }catch(error){if(ticket===sequence)showError(error);}
   finally{clearTimeout(loading);}
 }
@@ -97,3 +106,4 @@ window.addEventListener('sahmt:auth-retry',()=>navigate(desiredURL(),{replace:tr
 window.addEventListener('sahmt:account-change',()=>{accountGeneration++;pendingPages.clear();for(const p of pages.values())p.ctx.dispose();pages.clear();current=null;navigate(desiredURL(),{replace:true});});
 registerPwa({base}).catch(()=>{});
 navigate(desiredURL(),{replace:true});
+
