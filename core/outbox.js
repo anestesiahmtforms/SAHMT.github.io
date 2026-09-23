@@ -1,4 +1,4 @@
-const ALLOWED=new Set(['etiquetas.save','eventos.save']);
+const ALLOWED=new Set(['eventos.save']);
 const SECRET=/^(token|idToken|refreshToken|accessToken|authToken|deviceToken|credential|password|userEmail|userName|actorUid|actorEmail|actorName|signerUid|signerEmail|signerName|signedAt|queuedAt)$/i;
 export function safePayload(data){if(Array.isArray(data))return data.map(safePayload);if(data&&typeof data==='object')return Object.fromEntries(Object.entries(data).filter(([k])=>!SECRET.test(k)).map(([k,v])=>[k,safePayload(v)]));return data;}
 export class Outbox {
@@ -11,4 +11,5 @@ export class Outbox {
   async run(){const s=this.session(),uid=s?.uid||s?.user?.uid;if(s?.status!=='authenticated'||!uid||s.memberStatus&&s.memberStatus!=='ACTIVE')return {sent:0};const email=s.user.email,generation=s.generation;let sent=0;const initial=this.read(email);for(const item of initial){if(this.session().generation!==generation||this.session().user?.email!==email)break;if(item.email!==email||!ALLOWED.has(item.action)||item.status!=='pending')continue;if(item.actorUid&&item.actorUid!==uid){this.update(email,item.requestId,{status:'review',message:'Envio associado a outra identidade. Solicite conferência.'});continue;}if(this.now()-item.createdAt>7*86400000){this.update(email,item.requestId,{status:'review',message:'Envio antigo: revisar antes de tentar novamente.'});continue;}try{await this.api.call(item.action,safePayload(item.data),{requestId:item.requestId});this.write(email,this.read(email).filter(r=>r.requestId!==item.requestId));sent++;}catch(e){if(e.retryable)break;this.update(email,item.requestId,{status:'review',message:e.message});if(['AUTH_REQUIRED','AUTH_REAUTH_REQUIRED','ACCESS_DENIED','FORBIDDEN','ACCOUNT_CHANGED','CANCELLED'].includes(e.code))break;}}return {sent};}
   update(email,id,patch){this.write(email,this.read(email).map(r=>r.requestId===id?{...r,...patch}:r));}
   discard(id){const email=this.session()?.user?.email;if(email)this.write(email,this.read(email).filter(r=>r.requestId!==id));}
+  discardAction(action){const email=this.session()?.user?.email;if(!email)return 0;const rows=this.read(email),kept=rows.filter(r=>r.action!==action);this.write(email,kept);return rows.length-kept.length;}
 }

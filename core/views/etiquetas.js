@@ -17,6 +17,9 @@ const state = {
   cameraOpen: false,
   cameraStarting: false,
   cameraRequestId: 0,
+  captureInProgress: false,
+  aiReadInProgress: false,
+  summaryDate: "",
   imageBlob: null,
   imageUrl: "",
   metadata: null,
@@ -116,7 +119,6 @@ const plantonistasUi = {
   button: null,
   panel: null,
   checks: [],
-  valueRail: null,
 };
 
 function setCaptureButtonIdleState() {
@@ -163,6 +165,7 @@ document.addEventListener("sahmt:show", () => {
   summaryDateEl.value = today;
   reportMonthEl.value = today.slice(0, 7);
   updateEntryValidationStates();
+  Services.discardPending("etiquetas.save");
   updatePendingSubmissionsStatus();
 });
 window.addEventListener("popstate", handleBrowserBack);
@@ -238,8 +241,6 @@ entryPanelEl?.addEventListener("focusin", (event) => {
     }
   }, 80);
 });
-window.addEventListener("focus", refreshDisplayedSummaries);
-window.addEventListener("pageshow", refreshDisplayedSummaries);
 if (window.visualViewport) {
   const syncKeyboardViewport = () => {
     const entryIsOpen = entryPanelEl && !entryPanelEl.hidden;
@@ -255,7 +256,6 @@ if (window.visualViewport) {
 document.addEventListener("visibilitychange", () => {
   if (!document.hidden) {
     refreshDisplayedSummaries();
-    flushPendingSubmissions({ notify: true });
   }
 });
 
@@ -277,8 +277,10 @@ async function bootstrap() {
   syncConditionalEntryFields();
   syncPlantonistasRequirement();
   renderSheetStatus();
+  // Discard legacy local label queue only; clinical records must never be
+  // persisted offline or replayed later. Other module queues are untouched.
+  Services.discardPending("etiquetas.save");
   updatePendingSubmissionsStatus();
-  flushPendingSubmissions({ notify: true });
   initializeAuthorizedApp().catch((error) => console.warn("Falha no aquecimento inicial:", error));
   registerServiceWorker();
 }
@@ -599,9 +601,9 @@ async function startCamera() {
     const stream = await navigator.mediaDevices.getUserMedia({
       video: {
         facingMode: { ideal: "environment" },
-        width: { ideal: 2560 },
-        height: { ideal: 1440 },
-        frameRate: { ideal: 30, max: 30 },
+        width: { ideal: 1920 },
+        height: { ideal: 1080 },
+        frameRate: { ideal: 24, max: 30 },
       },
       audio: false,
     });
@@ -677,6 +679,7 @@ function stopCamera() {
 }
 
 async function captureFromCamera() {
+  if (state.captureInProgress) return;
   if (!state.stream) {
     setStatus("Abra a camera antes de capturar.", "error");
     return;
@@ -687,6 +690,8 @@ async function captureFromCamera() {
     return;
   }
 
+  state.captureInProgress = true;
+  try {
   const crop = getGuideCropRect(cameraEl.videoWidth, cameraEl.videoHeight);
   canvasEl.width = crop.width;
   canvasEl.height = crop.height;
@@ -694,7 +699,7 @@ async function captureFromCamera() {
   const context = canvasEl.getContext("2d", { willReadFrequently: true });
   context.drawImage(cameraEl, crop.x, crop.y, crop.width, crop.height, 0, 0, crop.width, crop.height);
 
-  const blob = await new Promise((resolve) => canvasEl.toBlob(resolve, "image/jpeg", 0.98));
+  const blob = await new Promise((resolve) => canvasEl.toBlob(resolve, "image/jpeg", 0.92));
   stopCamera();
   if (!blob) {
     setStatus("Nao foi possivel preparar a imagem capturada. Tente novamente.", "error");
@@ -702,6 +707,9 @@ async function captureFromCamera() {
   }
   setImageBlob(blob);
   setStatus("Etiqueta capturada. Toque em Ler Etiqueta.", "success");
+  } finally {
+    state.captureInProgress = false;
+  }
 }
 
 function handleFileUpload(event) {
@@ -777,6 +785,7 @@ function getGuideCropRect(sourceWidth, sourceHeight) {
 }
 
 async function processCurrentImage() {
+  if (state.aiReadInProgress) return;
   if (!state.imageBlob) {
     setStatus("Capture ou escolha uma imagem primeiro.", "error");
     return;
@@ -790,6 +799,7 @@ async function processCurrentImage() {
   // The startup health check is advisory: a temporary failure must not prevent
   // a user-requested read. The AI endpoint still validates the session itself.
 
+  state.aiReadInProgress = true;
   stopCamera();
   toggleBusy(true);
   setStatus("Lendo Etiqueta", "info");
@@ -819,6 +829,7 @@ async function processCurrentImage() {
     console.error(error);
     setStatus(`Falha na leitura da etiqueta: ${error.message}`, "error");
   } finally {
+    state.aiReadInProgress = false;
     toggleBusy(false);
   }
 }
@@ -1077,7 +1088,7 @@ function collectFormData() {
     cirurgia: fields.cirurgia.value.trim(),
     atendimento: fields.atendimento.value.trim(),
     tipo,
-    valor: formatStoredCurrency(fields.valor.value),
+    valor: (shouldRequireValor(tipo) || isSadtType(tipo)) ? formatStoredCurrency(fields.valor.value) : "",
     convenio: fields.convenio.value.trim(),
     credor: fields.credor.value.trim(),
     plantonistas: isCaixa ? "" : getSelectedPlantonistasValue(),
@@ -1120,7 +1131,7 @@ async function sendToSheet() {
     resetForm({ keepImage: false, keepDate: sentDate });
     summaryDateEl.value = sentDate;
     reportMonthEl.value = sentDate.slice(0, 7);
-    await refreshOpenPanelsData();
+    applySavedLabelToOpenReports(result, payload);
     resetScannerView();
     setSendFeedback("Dados enviados com sucesso!", "success");
     setStatus("Dados enviados com sucesso!", "success");
@@ -1133,7 +1144,7 @@ async function sendToSheet() {
 
 const PENDING_SUBMISSIONS_KEY = "etiquetas-sahmt-pending-submissions";
 
-async function postWithTimeout(payload,timeoutMs,options={}){try{return await Services.saveLabel(payload,{queue:options.queueOnFailure!==false});}catch(e){if(e.code!=="DUPLICATE")throw e;const decision=await confirmSubmission(payload,[payload]);if(!decision.confirmed)throw new Error("Envio cancelado. Nenhum novo registro foi criado.");return Services.saveLabel({...payload,duplicateJustification:decision.duplicateJustification},{queue:options.queueOnFailure!==false});}}
+async function postWithTimeout(payload,timeoutMs){try{return await Services.saveLabel(payload,{queue:false,timeoutMs});}catch(e){if(e.code!=="DUPLICATE")throw e;const decision=await confirmSubmission(payload,[payload]);if(!decision.confirmed)throw new Error("Envio cancelado. Nenhum novo registro foi criado.");return Services.saveLabel({...payload,duplicateJustification:decision.duplicateJustification},{queue:false,timeoutMs});}}
 
 function queueSubmission(){throw new Error("Confira os envios pendentes no menu da conta.");}
 
@@ -1143,8 +1154,6 @@ function stripQueueMetadata(payload) {
 }
 
 function readPendingSubmissions(){return Services.pending("etiquetas.save");}
-
-async function flushPendingSubmissions(options={}){try{const r=await Services.flush();updatePendingSubmissionsStatus();if(r.sent&&options.notify)showPendingSendConfirmation(r.sent);}catch{updatePendingSubmissionsStatus();}}
 
 function updatePendingSubmissionsStatus() {
   if (!pendingSubmissionsStatusEl) {
@@ -1157,8 +1166,6 @@ function updatePendingSubmissionsStatus() {
     : `${pendingCount} registros aguardando conexão para envio.`;
 }
 
-window.addEventListener("online", () => flushPendingSubmissions({ notify: true }));
-window.setInterval(() => flushPendingSubmissions({ notify: true }), 30000);
 
 function showSendError(message) {
   setSendFeedback(message, "error");
@@ -1435,7 +1442,7 @@ function collectConfirmationPayload(basePayload) {
     tipo: normalizeTipoValue(confirmSummaryEl.querySelector("#confirm-tipo")?.value || ""),
     valor: (shouldRequireValor(confirmSummaryEl.querySelector("#confirm-tipo")?.value || "") || isSadtType(confirmSummaryEl.querySelector("#confirm-tipo")?.value || ""))
       ? formatStoredCurrency(confirmSummaryEl.querySelector("#confirm-valor")?.value || "")
-      : formatStoredCurrency(confirmSummaryEl.querySelector("#confirm-valor")?.value || ""),
+      : "",
     convenio: shouldRequireConvenio(confirmSummaryEl.querySelector("#confirm-tipo")?.value || "")
       ? (confirmSummaryEl.querySelector("#confirm-convenio")?.value.trim() || "")
       : "",
@@ -1450,7 +1457,7 @@ function getMissingRequiredFields(payload, options = {}) {
     return ["data", "nomePaciente", "atendimento", "credor"].filter((key) => !String(payload[key] || "").trim());
   }
   const {
-    requireValor = false,
+    requireValor = shouldRequireValor(payload.tipo),
     requireConvenio = true,
     requirePlantonistas = payload.credor !== CREDOR_CAIXA,
   } = options;
@@ -1501,6 +1508,9 @@ function updateEntryValidationStates(options = {}) {
     : isSadtMode()
       ? ["data", "nomePaciente", "atendimento", "tipo", "credor"]
       : ["data", "nomePaciente", "cirurgia", "atendimento", "tipo", "credor"];
+  if (shouldRequireValor(payload.tipo)) {
+    requiredKeys.push("valor");
+  }
   if (shouldRequireConvenio(payload.tipo)) {
     requiredKeys.push("convenio");
   }
@@ -1543,10 +1553,9 @@ function syncConditionalEntryFields() {
 
   if (conditionalFields.valor) {
     conditionalFields.valor.hidden = !needsValor;
-    plantonistasUi.valueRail?.classList.toggle("has-value-field", needsValor);
   }
   if (fields.valor) {
-    fields.valor.required = false;
+    fields.valor.required = requiresValor;
     if (!needsValor) {
       fields.valor.value = "";
     }
@@ -1625,7 +1634,7 @@ function syncInlineConditionalFields(root, prefix) {
   }
   if (valueEl) {
     valueEl.disabled = !needsValor;
-    valueEl.required = false;
+    valueEl.required = needsValor;
     if (!needsValor) {
       valueEl.value = "";
     }
@@ -1666,7 +1675,27 @@ async function refreshDisplayedSummaries() {
   await refreshOpenPanelsData();
 }
 
-async function loadSummary(options={}){state.summaryMode="date";try{state.summaryRows=(await Services.labelEntries({date:options.date||summaryDateEl.value||getTodayISO()})).sort(compareEtiquetaRecordsDesc);renderSummary(state.summaryRows,"Nenhuma entrada encontrada nesta data.");if(!options.silent)setStatus("Resumo carregado.","success");}catch(e){state.summaryRows=[];renderSummary([],e.message);if(!options.silent)setStatus(e.message,"error");}}
+function applySavedLabelToOpenReports(result, payload) {
+  if (state.summaryDate === payload.data && Array.isArray(result?.entries)) {
+    state.summaryRows = Services.projectLabelRows(result.entries).sort(compareEtiquetaRecordsDesc);
+    if (summaryPanelEl && !summaryPanelEl.hidden && summaryDateEl?.value === payload.data) renderSummary(state.summaryRows, "Nenhuma entrada encontrada nesta data.");
+  }
+  const record = result?.record;
+  const month = String(payload?.data || "").slice(0, 7);
+  if (!record || reportMonthEl?.value !== month || state.monthlyMonth !== month) return;
+  const projected = Services.projectLabelRows([record])[0];
+  const index = state.monthlyRows.findIndex(row => String(row.id) === String(record.id));
+  if (index >= 0) state.monthlyRows[index] = projected;
+  else state.monthlyRows.push(projected);
+  state.monthlyRows.sort(compareEtiquetaRecordsAsc);
+  const alertCount = state.monthlyRows.filter(row => isAlertType(row.tipo)).length;
+  if (monthlyPanelEl && !monthlyPanelEl.hidden) {
+    renderMonthlyStatus(`${state.monthlyRows.length} entrada(s) em ${formatMonth(month)}. ${alertCount} alerta(s).`, state.monthlyRows.length ? "success" : "neutral");
+    renderMonthlyList(state.monthlyRows, "Nenhum registro encontrado para este mes.");
+  }
+}
+
+async function loadSummary(options={}){state.summaryMode="date";const date=options.date||summaryDateEl.value||getTodayISO();if(state.summaryDate===date)renderSummary(state.summaryRows,"Nenhuma entrada encontrada nesta data.");try{const rows=await Services.labelEntries({date});state.summaryRows=rows.sort(compareEtiquetaRecordsDesc);state.summaryDate=date;renderSummary(state.summaryRows,"Nenhuma entrada encontrada nesta data.");if(!options.silent)setStatus("Resumo carregado.","success");}catch(e){if(state.summaryDate!==date)renderSummary([],"Não foi possível carregar os registros desta data.");if(!options.silent)setStatus(e.message,"error");}}
 
 function runSummarySearch() {
   loadSummary({ silent: false, date: summaryDateEl?.value || getTodayISO() });
@@ -1731,10 +1760,8 @@ async function loadMonthlySummaryInternal(options = {}) {
       setStatus("Relatorio mensal atualizado.", "success");
     }
   } catch (error) {
-    state.monthlyRows = [];
-    state.monthlyMonth = "";
     renderMonthlyStatus(`Nao foi possivel atualizar o relatorio mensal: ${error.message}`, "error");
-    renderMonthlyList([], "Nao foi possivel carregar os registros deste mes.");
+    if (state.monthlyMonth !== month) renderMonthlyList([], "Nao foi possivel carregar os registros deste mes.");
     if (!options.silent) {
       setStatus(`Falha ao atualizar relatorio mensal: ${error.message}`, "error");
     }
@@ -2250,7 +2277,7 @@ async function saveEditedRecord() {
     if (payload.data) {
       summaryDateEl.value = payload.data;
     }
-    await refreshOpenPanelsData();
+    applySavedLabelToOpenReports(result, payload);
     setStatus(result.message || "Registro editado com sucesso!", "success");
   } catch (error) {
     setEditFeedback(`Falha ao editar registro: ${error.message}`, "error");
@@ -3025,27 +3052,12 @@ function setupPlantonistasPicker() {
 
   panel.addEventListener("click", (event) => event.stopPropagation());
   wrapper.append(button, panel);
-  const plantonistasLabel = fields.plantonistas.closest("label");
   fields.plantonistas.insertAdjacentElement("afterend", wrapper);
-
-  const valueLabel = fields.valor.closest("label");
-  const valueRail = document.createElement("div");
-  valueRail.id = "entry-value-rail";
-  valueRail.className = "entry-value-rail";
-  const valueSurface = document.createElement("div");
-  valueSurface.className = "entry-value-rail-surface";
-  valueSurface.setAttribute("aria-hidden", "true");
-  if (valueLabel) {
-    valueSurface.append(valueLabel);
-  }
-  valueRail.append(valueSurface);
-  (plantonistasLabel || wrapper).insertAdjacentElement("afterend", valueRail);
 
   plantonistasUi.wrapper = wrapper;
   plantonistasUi.button = button;
   plantonistasUi.panel = panel;
   plantonistasUi.checks = checks;
-  plantonistasUi.valueRail = valueRail;
   syncPlantonistasFromCheckboxes();
 }
 

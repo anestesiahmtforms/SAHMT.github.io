@@ -14,7 +14,8 @@ export async function pageData(id,services){
   const bootstrap=id==='home'?(services.bootstrapData||await services.bootstrap()):{contacts:[]};
   const needsSchedule=['home','eventos'].includes(id);
   const schedule=needsSchedule?(services.store.peek('escala.list:{}')||cachedSchedule(services)):null;
+  // The screen paints from its local snapshot first. Its own refresh path updates
+  // the schedule after mount, so a slow Apps Script call never holds navigation.
   if(needsSchedule&&!schedule)services.schedule().catch(()=>{});
   return {bootstrap,schedule};
 }
-

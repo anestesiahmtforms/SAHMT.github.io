@@ -1124,12 +1124,6 @@ const {Services,localStorage,sessionStorage,document,window,navigator,location,h
       return;
     }
 
-    // O relatório mensal é uma tela própria. Feche o diário antes de abri-lo
-    // para evitar dois modais concorrendo pelo foco e pelo gesto de toque.
-    if (elements.recordsPanelModal && !elements.recordsPanelModal.classList.contains("hidden")) {
-      closeDailyRecordsPanel();
-    }
-
     clearMonthlyRecordsStatus();
     if (elements.monthlyRecordsInput && !elements.monthlyRecordsInput.value) {
       elements.monthlyRecordsInput.value = todayKey.slice(0, 7);
