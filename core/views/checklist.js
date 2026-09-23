@@ -11,12 +11,13 @@ window.SAHMT_CHECKLIST_CONTRACT=(await import('../checklist-contract.js')).check
   const DIRECT_RECORD_USERS = new Set();
   let activatedMaintenance = new Set(), activatedMaintenanceDay = '', manualMaintenance = new Set(), resetRecords = new Set();
   const unitKey = item => String(item?.id ?? '').replace(/\D/g, '');
-  const isMaintenance = item => item?.inactive===true || (item?.inactive==null && MAINTENANCE_UNITS.has(unitKey(item)));
+  const isDefaultMaintenance = item => item?.inactive==null && MAINTENANCE_UNITS.has(unitKey(item));
+  const isMaintenance = item => item?.inactive===true || isDefaultMaintenance(item);
   function syncMaintenanceDay(day = dateKey()) {
     if (activatedMaintenanceDay !== day) { activatedMaintenanceDay = day; activatedMaintenance = new Set(); manualMaintenance = new Set(); resetRecords = new Set(); }
     return activatedMaintenance;
   }
-  const isInactiveMaintenance = (item, day = dateKey()) => (manualMaintenance.has(unitKey(item)) || (isMaintenance(item) && !item.record && !(day === activatedMaintenanceDay && activatedMaintenance.has(unitKey(item)))));
+  const isInactiveMaintenance = (item, day = dateKey()) => { const key=unitKey(item); if(manualMaintenance.has(key))return true; if(isDefaultMaintenance(item))return !(day===activatedMaintenanceDay&&activatedMaintenance.has(key)); return isMaintenance(item)&&!item.record&&!(day===activatedMaintenanceDay&&activatedMaintenance.has(key)); };
   const numericUnitId = item => Number(unitKey(item)) || Number.MAX_SAFE_INTEGER;
   const isIsoDay = value => /^\d{4}-\d{2}-\d{2}$/.test(String(value || ''));
   let pendingRecord = null, pendingRecordMode = 'qr', pendingSignature = null, pendingSignatures = new Map(), busy = false, reportSyncTimer = null, reportSyncStartedAt = 0, reportSyncPending = false;
