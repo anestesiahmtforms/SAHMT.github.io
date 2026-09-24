@@ -132,6 +132,12 @@ const {ChecklistLocalStore}=await import('../checklist-local-store.js');
     if(checklistSyncPromise)return checklistSyncPromise;
     checklistSyncPromise=(async()=>{
       const {email,uid}=sessionOwner();if(!email||!uid||session?.authenticated!==true)return {sent:0};
+      const failedOperations=await ChecklistLocalStore.listOperations({ownerEmail:email,statuses:['error']});
+      for(const operation of failedOperations){
+        if(operation.action!=='sign'||!Object.prototype.hasOwnProperty.call(operation.payload||{},'signedAt')||!/^Credenciais e autoria não são campos de negócio\.?$/i.test(String(operation.lastError||'').trim()))continue;
+        const payload=cloneData(operation.payload);delete payload.signedAt;
+        await ChecklistLocalStore.updateOperation(operation.requestId,{payload,status:'retry',attempts:0,lastError:'',nextAttemptAt:0});
+      }
       const operations=await ChecklistLocalStore.listOperations({ownerEmail:email,statuses:['pending','retry']});let sent=0,failed=false,conflict=false,correctionDay='';
       for(const operation of operations){
         if(operation.nextAttemptAt>Date.now())continue;
@@ -139,7 +145,8 @@ const {ChecklistLocalStore}=await import('../checklist-local-store.js');
         if(operation.actorUid!==uid){await ChecklistLocalStore.updateOperation(operation.requestId,{status:'error',lastError:'A conta ativa não corresponde à conta que criou a operação.'});failed=true;continue;}
         syncIndicator('syncing',0);
         try{
-          const result=await api(operation.action,{...operation.payload,requestId:operation.requestId},{timeoutMs:20000});
+          const payload=cloneData(operation.payload);if(operation.action==='sign')delete payload.signedAt;
+          const result=await api(operation.action,{...payload,requestId:operation.requestId},{timeoutMs:20000});
           if(operation.action==='sign'){
             const confirmed=window.SAHMT_CHECKLIST_CONTRACT(result,'report',{day:operation.day});
             rememberReport(confirmed);
@@ -337,11 +344,13 @@ const {ChecklistLocalStore}=await import('../checklist-local-store.js');
     if(mode==='cached'){const retry=addText(statusWrap,'button','Tentar sincronizar');retry.type='button';retry.className='soft-button report-sign-retry';retry.onclick=()=>{clearReportRetry();void loadReport().catch(()=>{});};}
     const incompletePending=mode==='ready';
     if(data.signature){appendSignatureResult(statusWrap,data,state);}
-    else if(incompletePending){const incompleteButton=addText(statusWrap,'button','Assinar sem concluir');incompleteButton.type='button';incompleteButton.className='sign-incomplete-button';incompleteButton.disabled=!data.canSign||reportSyncPending||blockedChecklistDays.has(String(data.day));incompleteButton.setAttribute('aria-label','Assinar relatório sem concluir todos os checklists');incompleteButton.onclick=()=>openIncompleteSignatureBanner(data.signature);}
+    else if(incompletePending){const incompleteButton=addText(statusWrap,'button','Assinar sem concluir');incompleteButton.type='button';incompleteButton.className='sign-incomplete-button';incompleteButton.disabled=false;incompleteButton.setAttribute('aria-label','Assinar relatório sem concluir todos os checklists');incompleteButton.setAttribute('aria-disabled',String(blockedChecklistDays.has(String(data.day))));incompleteButton.onclick=()=>{if(blockedChecklistDays.has(String(data.day))){notice('Há um registro do Checklist aguardando sincronização. Aguarde a confirmação antes de assinar.');void syncChecklistQueue(String(data.day));return;}openIncompleteSignatureBanner(data.signature);};}
     $('reportSignActions').className='report-sign-actions mode-'+mode;
     $('signatureStatus').append(statusWrap);
     $('signForm').hidden=mode!=='ready';$('declaration').checked=false;
-    $('sign').disabled=reportSyncPending||blockedChecklistDays.has(String(data.day))||!!data.signature || (!!(data.lockedAfterSignature||data.staleSignature)&&!canDirectRecord()) || !isToday || !data.canSign || !done || done!==activeItems.length;
+    const completeBlocked=reportSyncPending||blockedChecklistDays.has(String(data.day))||!!data.signature||!isToday||!data.canSign||!!(data.lockedAfterSignature||data.staleSignature)&&!canDirectRecord();
+    $('sign').disabled=false;$('sign').setAttribute('aria-disabled',String(completeBlocked||!done||done!==activeItems.length));
+    $('sign').title=completeBlocked?'Aguardando dados confirmados e permissão para assinar.':(!done||done!==activeItems.length?'Conclua os arsenais ativos ou escolha “Assinar sem concluir”.':'Assinar após concluir.');
     closeIncompleteSignatureBanner();closeCompleteSignatureBanner();
   }
   function closeArsenalBanners(){document.querySelectorAll('.equipment').forEach(node=>node.classList.remove('has-open-status'));document.querySelectorAll('.equipment .status-banner').forEach(node=>{node.hidden=true;});}
@@ -462,8 +471,18 @@ const {ChecklistLocalStore}=await import('../checklist-local-store.js');
   lastValidReportDay=dateKey();$('reportDate').value=lastValidReportDay;
   if($('monthly'))$('monthly').onclick=()=>run(async()=>{$('reportMonth').value=dateKey().slice(0,7);$('monthlyDialog').showModal();await loadMonthly();});
   $('reportMonth').onchange=()=>run(loadMonthly);
-  $('sign').onclick=event=>{event.preventDefault();if(!report || !report.canSign || report.signature || $('sign').disabled)return;openCompleteSignatureBanner();};
-  $('signForm').onsubmit=event=>{event.preventDefault();if(!report || $('sign').disabled)return;openCompleteSignatureBanner();};
+  function requestCompleteSignature(){
+    if(!report||report.signature){notice('Este relatório já está assinado ou ainda não foi carregado.');return;}
+    if(reportSyncPending){notice('Aguarde a sincronização do relatório antes de assinar.');return;}
+    if(blockedChecklistDays.has(String(report.day))){notice('Há um registro do Checklist aguardando sincronização. Aguarde a confirmação antes de assinar.');void syncChecklistQueue(report.day);return;}
+    const active=report.items.filter(item=>!isMaintenance(item)),done=active.filter(item=>item.record).length;
+    if(!report.canSign){notice('Esta conta não está autorizada a assinar o Checklist.');return;}
+    if(report.day!==dateKey()){notice('Relatórios de dias anteriores são somente para consulta.');return;}
+    if(!done||done!==active.length){notice(`Faltam ${Math.max(0,active.length-done)} arsenal(is) para concluir. Para assinar agora, use “Assinar sem concluir”.`);return;}
+    openCompleteSignatureBanner();
+  }
+  $('sign').onclick=event=>{event.preventDefault();requestCompleteSignature();};
+  $('signForm').onsubmit=event=>{event.preventDefault();requestCompleteSignature();};
   $('cancelCompleteSignature').onclick=()=>closeCompleteSignatureBanner();
   async function submitCompleteSignature(chosenReason=selectedSignatureReason('completeSignatureReasonGroup')){
     if(!report||!report.canSign||report.signature)return;
@@ -471,8 +490,8 @@ const {ChecklistLocalStore}=await import('../checklist-local-store.js');
     if(!reason)throw new Error('Escolha “A pedido” ou “Tempo limite excedido”.');
     const responsible=normalizedEmail(report.responsible?.email),signedBy=normalizedEmail(session?.email),other=!!responsible&&responsible!==signedBy;
     pendingSignature ||= crypto.randomUUID();
-    const day=report.day,at=new Date().toISOString(),justification=other?reason:'',payload={day,revision:report.revision,accepted:true,justification,signatureReason:reason,signedAt:at,requestId:pendingSignature},signature={email:session?.email || '',at,incomplete:false,justification,reason};
-    await enqueueChecklistOperation('sign',payload,day,{signature});document.querySelectorAll('#completeSignatureReasonGroup [data-signature-reason]').forEach(button=>button.disabled=true);applyOptimisticSignature(day,signature);pendingSignature=null;closeCompleteSignatureBanner();renderReport(report);syncIndicator('pending');void syncSignatureInBackground(payload,day);
+    const day=report.day,at=new Date().toISOString(),justification=other?reason:'',payload={day,revision:report.revision,accepted:true,justification,signatureReason:reason,requestId:pendingSignature},signature={email:session?.email || '',at,incomplete:false,justification,reason};
+    await enqueueChecklistOperation('sign',payload,day,{signature});document.querySelectorAll('#completeSignatureReasonGroup [data-signature-reason]').forEach(button=>button.disabled=true);applyOptimisticSignature(day,signature);pendingSignature=null;closeCompleteSignatureBanner();renderReport(report);notice('Assinatura registrada neste aparelho. Sincronizando com a planilha…');syncIndicator('pending');void syncSignatureInBackground(payload,day);
   }
   $('confirmCompleteSignature').onclick=()=>run(()=>submitCompleteSignature());
   $('cancelIncompleteSignature').onclick=()=>closeIncompleteSignatureBanner();
@@ -481,8 +500,8 @@ const {ChecklistLocalStore}=await import('../checklist-local-store.js');
     if(!reason)throw new Error('Escolha “A pedido” ou “Tempo limite”.');
     if(!description)throw new Error('Descreva por que o checklist não foi concluído.');
     if(!report || !report.canSign || report.signature)return;
-    const justification=composeSignatureJustification(reason,description);$('declaration').checked=true;pendingSignature ||= crypto.randomUUID();const day=report.day,at=new Date().toISOString(),payload={day,revision:report.revision,accepted:true,signWithoutComplete:true,justification,signatureReason:reason,signatureDescription:description,signedAt:at,requestId:pendingSignature},signature={email:session?.email || '',at,incomplete:true,justification,reason,description};
-    await enqueueChecklistOperation('sign',payload,day,{signature});document.querySelectorAll('#incompleteSignatureReasonGroup [data-signature-reason]').forEach(button=>button.disabled=true);applyOptimisticSignature(day,signature);pendingSignature=null;closeIncompleteSignatureBanner();renderReport(report);syncIndicator('pending');void syncSignatureInBackground(payload,day);
+    const justification=composeSignatureJustification(reason,description);$('declaration').checked=true;pendingSignature ||= crypto.randomUUID();const day=report.day,at=new Date().toISOString(),payload={day,revision:report.revision,accepted:true,signWithoutComplete:true,justification,signatureReason:reason,signatureDescription:description,requestId:pendingSignature},signature={email:session?.email || '',at,incomplete:true,justification,reason,description};
+    await enqueueChecklistOperation('sign',payload,day,{signature});document.querySelectorAll('#incompleteSignatureReasonGroup [data-signature-reason]').forEach(button=>button.disabled=true);applyOptimisticSignature(day,signature);pendingSignature=null;closeIncompleteSignatureBanner();renderReport(report);notice('Assinatura registrada neste aparelho. Sincronizando com a planilha…');syncIndicator('pending');void syncSignatureInBackground(payload,day);
   }
   $('confirmIncompleteSignature').onclick=()=>run(()=>submitIncompleteSignature());  $('return').onclick=()=>{stopCamera();if(window.SAHMT_SHELL){window.SAHMT_SHELL.navigate(new URL('index.html',window.SAHMT_SHELL.base));return;}if(window.parent!==window){window.parent.postMessage({type:'sahmt-checklist-close'},cfg.parentOrigin);}else{location.href=cfg.parentOrigin+cfg.parentPath+'?skipNotice=1';}};
   function receiveSession(value){
@@ -524,6 +543,7 @@ const {ChecklistLocalStore}=await import('../checklist-local-store.js');
 })();
 
 }
+
 
 
 
