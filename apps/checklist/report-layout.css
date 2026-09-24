@@ -1029,6 +1029,31 @@ dialog.report-dialog #responsible[hidden] { display:none !important; }
 dialog.report-dialog #responsible>strong { flex:0 0 100% !important; }
 dialog.report-dialog #responsible .signature-person,
 dialog.report-dialog #signatureStatus .signature-result-button { display:flex !important; align-items:center !important; justify-content:center !important; min-height:34px !important; padding:7px 10px !important; border:1px solid rgba(13,50,87,.16) !important; border-radius:12px !important; font:inherit !important; font-size:.66rem !important; font-weight:850 !important; line-height:1.1 !important; text-align:center !important; overflow-wrap:anywhere !important; }
+
+/* iPhone: keep the signature controls tappable without Safari double-tap zoom. */
+@media (max-width: 680px) {
+  html, body, dialog.report-dialog, dialog.report-dialog * {
+    touch-action: manipulation;
+  }
+  dialog.report-dialog button,
+  dialog.report-dialog [role="button"] {
+    -webkit-tap-highlight-color: transparent;
+    pointer-events: auto;
+  }
+  dialog.report-dialog input,
+  dialog.report-dialog textarea,
+  dialog.report-dialog select {
+    font-size: 16px !important;
+  }
+  dialog.report-dialog #reportSignActions {
+    position: relative !important;
+    z-index: 110 !important;
+    pointer-events: auto !important;
+  }
+  dialog.report-dialog #reportSignActions button[aria-disabled="true"] {
+    opacity: .78;
+  }
+}
 dialog.report-dialog #responsible .signature-person:disabled,
 dialog.report-dialog #signatureStatus .signature-result-button:disabled { opacity:1 !important; cursor:default !important; }
 dialog.report-dialog #signatureStatus .signature-result-button { width:100% !important; margin:0 !important; }
@@ -1211,4 +1236,5 @@ dialog.report-dialog .recheck-prompt-actions button{min-width:88px!important;min
 dialog.report-dialog .report-loading-state{grid-column:1/-1;display:flex;min-height:100%;align-items:center;justify-content:center;flex-direction:column;gap:12px;margin:0;padding:18px;color:#17334c;text-align:center;font-weight:750;line-height:1.4}
 dialog.report-dialog .report-loading-error{color:#8f1d2c}
 dialog.report-dialog .report-loading-state button{min-width:150px;min-height:42px;margin:0}
+
 
