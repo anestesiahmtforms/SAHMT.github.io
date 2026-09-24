@@ -182,7 +182,7 @@ const {ChecklistLocalStore}=await import('../checklist-local-store.js');
     window.setTimeout(()=>{if(document.hidden||!checklistAppVisible||navigator.onLine===false)return;void api('report',{day},{timeoutMs:15000,cacheTtlMs:CHECKLIST_REPORT_CACHE_MS}).catch(()=>{});},600);
   }
   function stopCamera(){scanning=false;stream?.getTracks().forEach(track=>track.stop());stream=null;$('video').srcObject=null;}
-  function close(id){if(id==='cameraDialog')stopCamera();$(id).close();}
+  function close(id){if(id==='cameraDialog')stopCamera();if(id==='reportDialog')clearReportRetry();$(id).close();}
   function fail(error){ notice(error.message || 'Não foi possível concluir.'); }
   const displayRecord = item => resetRecords.has(unitKey(item)) ? null : item?.record;
   const redArsenalOrder = new Map([['14',0],['03',1],['10',2],['30',3],['05',4],['15',5]]);
@@ -334,6 +334,7 @@ const {ChecklistLocalStore}=await import('../checklist-local-store.js');
   const statusText=data.signature?'':mode==='cached'?'Mostrando dados recentes enquanto atualiza.':mode==='history'?'Histórico do dia — somente consulta.':mode==='stale'?'O checklist mudou após a assinatura. É necessária uma nova assinatura.':mode==='locked'?'Assinatura indisponível para esta conta.':'';
     const statusWrap=document.createElement('div');statusWrap.className='signature-status-wrap';
     if(statusText)addText(statusWrap,'p',statusText).className='signature signature-'+state;
+    if(mode==='cached'){const retry=addText(statusWrap,'button','Tentar sincronizar');retry.type='button';retry.className='soft-button report-sign-retry';retry.onclick=()=>{clearReportRetry();void loadReport().catch(()=>{});};}
     const incompletePending=mode==='ready';
     if(data.signature){appendSignatureResult(statusWrap,data,state);}
     else if(incompletePending){const incompleteButton=addText(statusWrap,'button','Assinar sem concluir');incompleteButton.type='button';incompleteButton.className='sign-incomplete-button';incompleteButton.disabled=!data.canSign||reportSyncPending||blockedChecklistDays.has(String(data.day));incompleteButton.setAttribute('aria-label','Assinar relatório sem concluir todos os checklists');incompleteButton.onclick=()=>openIncompleteSignatureBanner(data.signature);}
@@ -355,7 +356,15 @@ const {ChecklistLocalStore}=await import('../checklist-local-store.js');
   function showRecordedIssue(item){const card=[...$('equipmentList').children].find(node=>node.querySelector('[data-unit-id]')?.dataset.unitId===String(item.id ?? ''));const banner=card?.querySelector('.status-banner');if(!banner)return;if(!banner.hidden){closeArsenalBanners();return;}closeArsenalBanners();banner.replaceChildren();addText(banner,'strong','Não apto');addText(banner,'p',item.record?.occurrence || 'Nenhuma anotação informada.');fitStatusBanner(card,banner);card.classList.add('has-open-status');banner.hidden=false;}
   function showMaintenance(item){if(!canDirectRecord())return;const card=[...$('equipmentList').children].find(node=>node.querySelector('[data-unit-id]')?.dataset.unitId===String(item.id ?? ''));const banner=card?.querySelector('.status-banner');if(!banner)return;if(!banner.hidden){closeArsenalBanners();return;}closeArsenalBanners();banner.replaceChildren();addText(banner,'strong','Inativo');const activate=document.createElement('button');activate.type='button';activate.className='status-check-button';activate.textContent='Ativar';activate.setAttribute('aria-label',`Ativar ${item.name}`);activate.onclick=()=>{syncMaintenanceDay(report?.day || dateKey()).add(unitKey(item));closeArsenalBanners();if(report)renderReport(report);};banner.append(activate);fitStatusBanner(card,banner);card.classList.add('has-open-status');banner.hidden=false;}
   function openReportDialog(){closeArsenalActionBanner();const dialog=$('reportDialog');const title=dialog?.querySelector('.report-title h2');if(title)title.textContent='RELATÓRIO DIÁRIO - CHECKLIST';dialog.showModal();dialog.focus({preventScroll:true});}
-  let reportRequest = 0;
+  let reportRequest = 0, reportRetryTimer = null, reportRetryDay = '', reportRetryAttempts = 0;
+  function clearReportRetry(reset=true){if(reportRetryTimer){clearTimeout(reportRetryTimer);reportRetryTimer=null;}if(reset)reportRetryAttempts=0;}
+  function scheduleReportRetry(day){
+    if(!$('reportDialog')?.open||$('reportDate')?.value!==day)return;
+    if(reportRetryDay!==day){clearReportRetry();reportRetryDay=day;}
+    if(reportRetryTimer||reportRetryAttempts>=3)return;
+    const delay=[1200,3000,6500][reportRetryAttempts++];
+    reportRetryTimer=setTimeout(()=>{reportRetryTimer=null;if($('reportDialog')?.open&&$('reportDate')?.value===day)void loadReport(true).catch(()=>{});},delay);
+  }
   function showReportLoading(message='Abrindo relatório; sincronizando em segundo plano…'){
     report=null;closeArsenalBanners();closeArsenalInfoBanner();closeRecheckPromptBanner();$('sign').disabled=true;$('signForm').hidden=true;$('reportSignActions').className='report-sign-actions mode-history';$('responsible').hidden=false;$('responsible').className='signature responsible-compact';$('responsible').replaceChildren();
     addText($('responsible'),'strong','RESPONSÁVEL DO DIA');addText($('responsible'),'p','Carregando…');
@@ -365,12 +374,14 @@ const {ChecklistLocalStore}=await import('../checklist-local-store.js');
   function showReportLoadError(){
     $('equipmentList').replaceChildren();const box=document.createElement('div');box.className='report-loading-state report-loading-error';
     addText(box,'p','O relatório continua aberto, mas os dados ainda não chegaram. O contador segue indicando o estado da conexão.');
-    const retry=addText(box,'button','Tentar novamente');retry.type='button';retry.className='soft-button';retry.onclick=()=>{void loadReport();};
+    const retry=addText(box,'button','Tentar novamente');retry.type='button';retry.className='soft-button';retry.onclick=()=>{clearReportRetry();void loadReport();};
     $('equipmentList').append(box);$('signatureStatus').replaceChildren();$('responsible').replaceChildren();addText($('responsible'),'strong','RESPONSÁVEL DO DIA');addText($('responsible'),'p','Aguardando sincronização…');
   }
-  async function loadReport(){
+  async function loadReport(automaticRetry=false){
     const day=$('reportDate').value;
     if(!isIsoDay(day)){$('reportDate').value=lastValidReportDay || dateKey();return null;}
+    if(reportRetryDay!==day){clearReportRetry();reportRetryDay=day;}
+    else if(!automaticRetry)clearReportRetry();
     const request=++reportRequest,key=userDayKey(day),serviceKey='checklist.report:'+JSON.stringify({day}),stored=Services.store.peek(serviceKey),owner=sessionOwner();
     let cached=reportCache.get(key)?.data||(stored?rememberReport(window.SAHMT_CHECKLIST_CONTRACT({ok:true,...stored},'report',{day})):null);
     if(cached){try{cached=window.SAHMT_CHECKLIST_CONTRACT(cached,'report',{day});}catch{cached=null;}}
@@ -384,12 +395,12 @@ const {ChecklistLocalStore}=await import('../checklist-local-store.js');
         const alreadyRefreshing=Services.store.pending.has(serviceKey);
         const data=await api('report',{day},{force:!alreadyRefreshing,timeoutMs:15000,cacheTtlMs:CHECKLIST_REPORT_CACHE_MS});
         if(request!==reportRequest)return;
-        reportSyncPending=false;renderReport(data);pendingSignature=null;finishReportSync();
+        reportSyncPending=false;clearReportRetry();renderReport(data);pendingSignature=null;finishReportSync();
       }catch(error){
         if(request!==reportRequest)return;
         $('sign').disabled=true;failReportSync();
-        if(cached){reportSyncPending=true;renderReport({...cached,canSign:false});return;}
-        showReportLoadError();
+        if(cached){reportSyncPending=true;renderReport({...cached,canSign:false});scheduleReportRetry(day);return;}
+        showReportLoadError();scheduleReportRetry(day);
       }
     };
     void refreshInBackground();
@@ -513,5 +524,6 @@ const {ChecklistLocalStore}=await import('../checklist-local-store.js');
 })();
 
 }
+
 
 
