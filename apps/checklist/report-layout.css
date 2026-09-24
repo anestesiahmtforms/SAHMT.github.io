@@ -1057,6 +1057,9 @@ dialog.report-dialog #signatureStatus .signature-result-button { display:flex !i
 dialog.report-dialog #responsible .signature-person:disabled,
 dialog.report-dialog #signatureStatus .signature-result-button:disabled { opacity:1 !important; cursor:default !important; }
 dialog.report-dialog #signatureStatus .signature-result-button { width:100% !important; margin:0 !important; }
+dialog.report-dialog #signatureStatus .signature-sync-issue,
+dialog.report-dialog .report-loading-error .signature-sync-issue { color:#8b1e1e !important; font-size:.72rem !important; line-height:1.25 !important; overflow-wrap:anywhere !important; text-align:center !important; }
+dialog.report-dialog #signatureStatus .report-sign-retry { min-height:42px !important; width:100% !important; margin:4px 0 !important; touch-action:manipulation !important; }
 dialog.report-dialog #signatureStatus .signature-result-button.complete { background:#e8f7ed !important; color:#166534 !important; border-color:#73be8b !important; }
 dialog.report-dialog #signatureStatus .signature-result-button.incomplete { background:#fff4d6 !important; color:#8a5b00 !important; border-color:#e1b94e !important; }
 dialog.report-dialog #signatureStatus .incomplete-justification-display { width:100% !important; margin:5px 0 0 !important; padding:7px 9px !important; border-radius:10px !important; background:#fffaf0 !important; color:#4f3600 !important; }

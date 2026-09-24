@@ -29,7 +29,7 @@ const {ChecklistLocalStore}=await import('../checklist-local-store.js');
   const isInactiveMaintenance = (item, day = dateKey()) => { const key=unitKey(item); if(isActiveException(item))return false; if(manualMaintenance.has(key))return true; if(isDefaultMaintenance(item))return !(day===activatedMaintenanceDay&&activatedMaintenance.has(key)); return isMaintenance(item)&&!item.record&&!(day===activatedMaintenanceDay&&activatedMaintenance.has(key)); };
   const numericUnitId = item => Number(unitKey(item)) || Number.MAX_SAFE_INTEGER;
   const isIsoDay = value => /^\d{4}-\d{2}-\d{2}$/.test(String(value || ''));
-  let pendingRecord = null, pendingRecordMode = 'qr', pendingSignature = null, pendingSignatures = new Map(), busy = false, reportSyncTimer = null, reportSyncStartedAt = 0, reportSyncPending = false, checklistSyncPromise = null, checklistSyncTimer = null, checklistResumeHandler = null, checklistAppVisible = true, lastReconciliationConfirmed = false, lastBackgroundReconcileAt = 0;
+  let pendingRecord = null, pendingRecordMode = 'qr', pendingSignature = null, pendingSignatures = new Map(), busy = false, reportSyncTimer = null, reportSyncStartedAt = 0, reportSyncPending = false, reportSyncIssue = '', checklistSyncPromise = null, checklistSyncTimer = null, checklistResumeHandler = null, checklistAppVisible = true, lastReconciliationConfirmed = false, lastBackgroundReconcileAt = 0;
   const blockedChecklistDays = new Set();
   const canvas = document.createElement('canvas');
   const ctx = canvas.getContext('2d', {willReadFrequently:true});
@@ -49,8 +49,8 @@ const {ChecklistLocalStore}=await import('../checklist-local-store.js');
     clearInterval(reportSyncTimer);reportSyncStartedAt=Date.now();lastReconciliationConfirmed=false;syncIndicator('syncing',0);
     reportSyncTimer=setInterval(()=>syncIndicator('syncing',Math.floor((Date.now()-reportSyncStartedAt)/1000)),1000);
   }
-  async function finishReportSync() {const elapsed=Math.floor((Date.now()-reportSyncStartedAt)/1000);clearInterval(reportSyncTimer);reportSyncTimer=null;lastReconciliationConfirmed=true;const pending=await ChecklistLocalStore.listOperations({ownerEmail:session?.email||''}).catch(()=>[]);syncIndicator(pending.some(item=>item.status==='conflict')?'conflict':pending.some(item=>item.status==='error')?'error':pending.length?'pending':'updated',elapsed);}
-  function failReportSync() {clearInterval(reportSyncTimer);reportSyncTimer=null;syncIndicator('error');}
+  async function finishReportSync(day) {const elapsed=Math.floor((Date.now()-reportSyncStartedAt)/1000);clearInterval(reportSyncTimer);reportSyncTimer=null;lastReconciliationConfirmed=true;const pending=await ChecklistLocalStore.listOperations({day,ownerEmail:session?.email||''}).catch(()=>[]),conflict=pending.find(item=>item.status==='conflict'),error=pending.find(item=>item.status==='error');reportSyncIssue=conflict?.lastError||error?.lastError||'';syncIndicator(conflict?'conflict':error?'error':pending.length?'pending':'updated',elapsed);}
+  function failReportSync(error) {clearInterval(reportSyncTimer);reportSyncTimer=null;reportSyncIssue=String(error?.message||'Não foi possível confirmar a resposta do serviço.');syncIndicator('error');}
   function shiftDay(day,delta) {const value=new Date(`${day}T12:00:00Z`);value.setUTCDate(value.getUTCDate()+delta);return value.toISOString().slice(0,10);}
   async function authPayload() {
     session = await window.SAHMT_AUTH.requireAccess({moduleId:'CHECKLIST',pageId:'home'});
@@ -92,7 +92,7 @@ const {ChecklistLocalStore}=await import('../checklist-local-store.js');
     if(session?.uid&&session?.email)void ChecklistLocalStore.saveReport(day,session.uid,session.email,report).catch(()=>{});
   }
   async function syncSignatureInBackground(payload,day){return syncChecklistQueue(day);}
-  async function refreshReport(day){startReportSync();try{const data=await api('report',{day},{force:true});if(report?.day===day)renderReport(data);finishReportSync();return data;}catch{failReportSync();return null;}}
+  async function refreshReport(day){startReportSync();try{const data=await api('report',{day},{force:true});reportSyncPending=false;reportSyncIssue='';if(report?.day===day)renderReport(data);await finishReportSync(day);if(report?.day===day)renderReport(data);return data;}catch(error){failReportSync(error);return null;}}
   async function parseJsonResponse(response) {
     const body = await response.text();
     const contentType = response.headers.get("content-type") || "";
@@ -127,6 +127,16 @@ const {ChecklistLocalStore}=await import('../checklist-local-store.js');
     const owner=sessionOwner();if(!owner.email||!owner.uid||session?.authenticated!==true)throw new Error('Confirme seu acesso para registrar a ação.');
     const requestId=String(payload.requestId||'');if(!requestId)throw new Error('Não foi possível identificar esta ação. Tente novamente.');
     const saved=await ChecklistLocalStore.enqueue({requestId,action,day:String(day),ownerEmail:owner.email,actorUid:owner.uid,payload:cloneData(payload),optimistic:cloneData(optimistic)});blockedChecklistDays.add(String(day));return saved;
+  }
+  async function retryFailedChecklistOperations(day){
+    const {email,uid}=sessionOwner();if(!email||!uid)return;
+    const errors=await ChecklistLocalStore.listOperations({day:String(day),ownerEmail:email,statuses:['error']});
+    const retryable=errors.filter(item=>item.actorUid===uid);
+    if(!retryable.length){const pending=await ChecklistLocalStore.listOperations({day:String(day),ownerEmail:email,statuses:['pending','retry']});if(pending.length){notice('Tentando reenviar a ação pendente do Checklist…');await syncChecklistQueue(String(day));if(report?.day===String(day)&&$('reportDialog')?.open)await loadReport();return;}notice(reportSyncIssue||'Não há ação com falha que possa ser reenviada por esta conta.');return;}
+    for(const item of retryable)await ChecklistLocalStore.updateOperation(item.requestId,{status:'retry',attempts:0,lastError:'',nextAttemptAt:0});
+    reportSyncIssue='Reenviando '+retryable.length+' ação(ões) salva(s) neste aparelho…';syncIndicator('pending');
+    await syncChecklistQueue(String(day));
+    if(report?.day===String(day)&&$('reportDialog')?.open)await loadReport();
   }
   async function syncChecklistQueue(day){
     if(checklistSyncPromise)return checklistSyncPromise;
@@ -164,15 +174,17 @@ const {ChecklistLocalStore}=await import('../checklist-local-store.js');
       if(correctionDay){try{const corrected=await api('report',{day:correctionDay},{force:true,timeoutMs:15000});if(report?.day===correctionDay&&$('reportDialog')?.open)renderReport(corrected);lastReconciliationConfirmed=true;}catch{}}
       const remainingOperations=await ChecklistLocalStore.listOperations({ownerEmail:email}),remaining=remainingOperations.length;
       blockedChecklistDays.clear();remainingOperations.forEach(item=>blockedChecklistDays.add(String(item.day)));
-      const storedConflict=remainingOperations.some(item=>item.status==='conflict'),storedError=remainingOperations.some(item=>item.status==='error');
+      const indicatorDay=String(day||report?.day||''),reportOperations=indicatorDay?remainingOperations.filter(item=>String(item.day)===indicatorDay):remainingOperations;
+      const storedConflict=reportOperations.find(item=>item.status==='conflict'),storedError=reportOperations.find(item=>item.status==='error');
+      reportSyncIssue=storedConflict?.lastError||storedError?.lastError||'';
       if(conflict||storedConflict)syncIndicator('conflict');
-      else if((failed||storedError)&&remaining)syncIndicator('error');
-      else if(remaining)syncIndicator('pending');
+      else if(storedError)syncIndicator('error');
+      else if(reportOperations.length)syncIndicator('pending');
       else if(sent){
-        const targetDay=day||report?.day;
+        const targetDay=indicatorDay;
         if(targetDay&&report?.day===targetDay&&$('reportDialog')?.open){const refreshed=await refreshReport(targetDay);if(!refreshed)syncIndicator('error');}
         else syncIndicator(lastReconciliationConfirmed?'updated':'pending');
-      }else if(!remaining&&lastReconciliationConfirmed)syncIndicator('updated');
+      }else if(!reportOperations.length&&lastReconciliationConfirmed)syncIndicator('updated');
       return {sent,pending:remaining,failed};
     })().catch(()=>{syncIndicator('error');return {sent:0,pending:1,failed:true};}).finally(()=>{checklistSyncPromise=null;});
     return checklistSyncPromise;
@@ -338,13 +350,14 @@ const {ChecklistLocalStore}=await import('../checklist-local-store.js');
     closeRecheckPromptBanner();orderedItems.forEach(item=>{const maintenance=MAINTENANCE_UNITS.has(unitKey(item).slice(-2))||isInactiveMaintenance(item,data.day);const itemRecord=displayRecord(item),locked=!!(data.lockedAfterSignature||data.signature||data.staleSignature)&&!canDirectRecord();const state=maintenance?'MANUTENCAO':itemRecord?(itemRecord.condition==='SIM'?'SIM':'NAO'):'PENDENTE';const card=document.createElement('article');card.className='equipment '+state;const suffix=unitKey(item).slice(-2),specialLabel=redArsenalInfo.get(suffix);const button=document.createElement('button');button.type='button';button.className='arsenal-icon sigla-button '+state+(specialLabel?' arsenal-special-'+suffix:'');button.dataset.unitId=String(item.id ?? '');button.disabled=locked;button.setAttribute('aria-label',item.name+', '+(maintenance?'Inativo':itemRecord?(itemRecord.condition==='SIM'?'Realizado':'Não apto'):'Não Realizado')+(specialLabel?'. '+specialLabel:'')+(locked?'. Checklist assinado; novas ações apenas para usuários autorizados.':''));if(specialLabel){const label=document.createElement('span');label.className='arsenal-function-label';label.textContent=specialLabel;button.append(label);}const badge=document.createElement('span');badge.className='arsenal-number';badge.textContent=String(item.id ?? '').replace(/^.*?(\d+)$/,'$1');button.append(badge);if(maintenance){const meta=document.createElement('span');meta.className='arsenal-status-meta';meta.textContent='(Inativo)';button.append(meta);}else if(itemRecord){const meta=document.createElement('span');meta.className='arsenal-status-meta';meta.textContent=itemRecord.email || 'E-mail não disponível';button.append(meta);}button.onclick=()=>{if(checklistLockedForCurrentUser())return;if(canDirectRecord())openArsenalActionBanner(item);else if(itemRecord)openRecheckPromptBanner(item);else showArsenalInfo(item);};card.append(button);const banner=document.createElement('section');banner.className='status-banner '+state;banner.hidden=true;card.append(banner);if(itemRecord){const audit=document.createElement('span');audit.className='sr-only';audit.textContent=itemRecord.email;card.append(audit);}$('equipmentList').append(card);});
     $('signatureStatus').replaceChildren();
     const mode=data.signature?(data.signature.incomplete?'signed-incomplete':'signed-complete'):reportSyncPending?'cached':!isToday?'history':data.staleSignature?'stale':!data.canSign?'locked':'ready';
-  const statusText=data.signature?'':mode==='cached'?'Mostrando dados recentes enquanto atualiza.':mode==='history'?'Histórico do dia — somente consulta.':mode==='stale'?'O checklist mudou após a assinatura. É necessária uma nova assinatura.':mode==='locked'?'Assinatura indisponível para esta conta.':'';
+  const statusText=data.signature?'':mode==='cached'?'Mostrando dados recentes; assinatura aguarda confirmação do servidor.':mode==='history'?'Histórico do dia — somente consulta.':mode==='stale'?'O checklist mudou após a assinatura. É necessária uma nova assinatura.':mode==='locked'?'Esta conta não tem permissão de assinatura (permissão signer no cadastro).':'';
     const statusWrap=document.createElement('div');statusWrap.className='signature-status-wrap';
     if(statusText)addText(statusWrap,'p',statusText).className='signature signature-'+state;
+    if(reportSyncIssue){const detail=addText(statusWrap,'p','Detalhe da sincronização: '+reportSyncIssue);detail.className='signature signature-sync-issue';if(blockedChecklistDays.has(String(data.day))){const retryQueue=addText(statusWrap,'button','Tentar resolver sincronização');retryQueue.type='button';retryQueue.className='soft-button report-sign-retry';retryQueue.onclick=()=>run(()=>retryFailedChecklistOperations(data.day));}}
     if(mode==='cached'){const retry=addText(statusWrap,'button','Tentar sincronizar');retry.type='button';retry.className='soft-button report-sign-retry';retry.onclick=()=>{clearReportRetry();void loadReport().catch(()=>{});};}
     const incompletePending=mode==='ready';
     if(data.signature){appendSignatureResult(statusWrap,data,state);}
-    else if(incompletePending){const incompleteButton=addText(statusWrap,'button','Assinar sem concluir');incompleteButton.type='button';incompleteButton.className='sign-incomplete-button';incompleteButton.disabled=false;incompleteButton.setAttribute('aria-label','Assinar relatório sem concluir todos os checklists');incompleteButton.setAttribute('aria-disabled',String(blockedChecklistDays.has(String(data.day))));incompleteButton.onclick=()=>{if(blockedChecklistDays.has(String(data.day))){notice('Há um registro do Checklist aguardando sincronização. Aguarde a confirmação antes de assinar.');void syncChecklistQueue(String(data.day));return;}openIncompleteSignatureBanner(data.signature);};}
+    else if(incompletePending){const incompleteButton=addText(statusWrap,'button','Assinar sem concluir');incompleteButton.type='button';incompleteButton.className='sign-incomplete-button';incompleteButton.disabled=false;incompleteButton.setAttribute('aria-label','Assinar relatório sem concluir todos os checklists');incompleteButton.setAttribute('aria-disabled',String(blockedChecklistDays.has(String(data.day))));incompleteButton.onclick=()=>{if(blockedChecklistDays.has(String(data.day))){notice(reportSyncIssue||'Há uma ação do Checklist aguardando sincronização. Reenvie a ação pendente antes de assinar.');void retryFailedChecklistOperations(String(data.day));return;}openIncompleteSignatureBanner(data.signature);};}
     $('reportSignActions').className='report-sign-actions mode-'+mode;
     $('signatureStatus').append(statusWrap);
     $('signForm').hidden=mode!=='ready';$('declaration').checked=false;
@@ -380,9 +393,10 @@ const {ChecklistLocalStore}=await import('../checklist-local-store.js');
     $('signatureStatus').replaceChildren();
     $('equipmentList').replaceChildren();const loading=addText($('equipmentList'),'p',message);loading.className='report-loading-state';loading.setAttribute('role','status');loading.setAttribute('aria-live','polite');
   }
-  function showReportLoadError(){
+  function showReportLoadError(error){
     $('equipmentList').replaceChildren();const box=document.createElement('div');box.className='report-loading-state report-loading-error';
-    addText(box,'p','O relatório continua aberto, mas os dados ainda não chegaram. O contador segue indicando o estado da conexão.');
+    addText(box,'p','Não foi possível confirmar o relatório no servidor. A assinatura ficará bloqueada até os dados atuais chegarem.');
+    addText(box,'p',String(error?.message||reportSyncIssue||'Sem resposta do serviço.')).className='signature-sync-issue';
     const retry=addText(box,'button','Tentar novamente');retry.type='button';retry.className='soft-button';retry.onclick=()=>{clearReportRetry();void loadReport();};
     $('equipmentList').append(box);$('signatureStatus').replaceChildren();$('responsible').replaceChildren();addText($('responsible'),'strong','RESPONSÁVEL DO DIA');addText($('responsible'),'p','Aguardando sincronização…');
   }
@@ -401,15 +415,16 @@ const {ChecklistLocalStore}=await import('../checklist-local-store.js');
         if(cached){try{cached=await overlayPendingOperations(cached);if(request===reportRequest)renderReport({...cached,canSign:false});}catch{cached=null;}}
         if(!cached&&owner.uid){const disk=await ChecklistLocalStore.getReport(day,owner.uid).catch(()=>null);if(disk?.data){try{cached=await overlayPendingOperations(window.SAHMT_CHECKLIST_CONTRACT(disk.data,'report',{day}));}catch{cached=null;}if(cached&&request===reportRequest)renderReport({...cached,canSign:false});}}
         const unsettled=owner.email?await ChecklistLocalStore.listOperations({day,ownerEmail:owner.email}):[];if(unsettled.length)blockedChecklistDays.add(day);else blockedChecklistDays.delete(day);
+        const localConflict=unsettled.find(item=>item.status==='conflict'),localError=unsettled.find(item=>item.status==='error');reportSyncIssue=localConflict?.lastError||localError?.lastError||'';
         const alreadyRefreshing=Services.store.pending.has(serviceKey);
         const data=await api('report',{day},{force:!alreadyRefreshing,timeoutMs:15000,cacheTtlMs:CHECKLIST_REPORT_CACHE_MS});
         if(request!==reportRequest)return;
-        reportSyncPending=false;clearReportRetry();renderReport(data);pendingSignature=null;finishReportSync();
+        reportSyncPending=false;clearReportRetry();pendingSignature=null;await finishReportSync(day);renderReport(data);
       }catch(error){
         if(request!==reportRequest)return;
-        $('sign').disabled=true;failReportSync();
+        $('sign').disabled=true;failReportSync(error);
         if(cached){reportSyncPending=true;renderReport({...cached,canSign:false});scheduleReportRetry(day);return;}
-        showReportLoadError();scheduleReportRetry(day);
+        showReportLoadError(error);scheduleReportRetry(day);
       }
     };
     void refreshInBackground();
@@ -474,7 +489,7 @@ const {ChecklistLocalStore}=await import('../checklist-local-store.js');
   function requestCompleteSignature(){
     if(!report||report.signature){notice('Este relatório já está assinado ou ainda não foi carregado.');return;}
     if(reportSyncPending){notice('Aguarde a sincronização do relatório antes de assinar.');return;}
-    if(blockedChecklistDays.has(String(report.day))){notice('Há um registro do Checklist aguardando sincronização. Aguarde a confirmação antes de assinar.');void syncChecklistQueue(report.day);return;}
+    if(blockedChecklistDays.has(String(report.day))){notice(reportSyncIssue||'Há uma ação do Checklist aguardando sincronização. Reenvie a ação pendente antes de assinar.');void retryFailedChecklistOperations(report.day);return;}
     const active=report.items.filter(item=>!isMaintenance(item)),done=active.filter(item=>item.record).length;
     if(!report.canSign){notice('Esta conta não está autorizada a assinar o Checklist.');return;}
     if(report.day!==dateKey()){notice('Relatórios de dias anteriores são somente para consulta.');return;}
